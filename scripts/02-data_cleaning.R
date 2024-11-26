@@ -20,7 +20,7 @@ cleaned_data <-
   mutate(BOTANICAL_NAME = replace(BOTANICAL_NAME, BOTANICAL_NAME == "alix Ã\u0097 sepulcralis", "Salix x sepulcralis")) |> # Fix the broken botanical name
   mutate(WARD = replace(WARD, OBJECTID == 26388, "15")) |> # Give a tree with no ward allocation its correct ward allocation
   janitor::clean_names() |> # match case on all variable_names
-  select(objectid,structid,address,streetname,ward,botanical_name,dbh_trunk) |> # Select ids, street location, ward location, species name, and trunk diameter for analysis
+  select(objectid,structid,address,streetname,crossstreet1,crossstreet2,ward,botanical_name,dbh_trunk) |> # Select ids, street location, ward location, species name, and trunk diameter for analysis
   tidyr::drop_na() # Filter out any na values
 
 #### Save data ####

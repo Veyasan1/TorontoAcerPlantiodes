@@ -18,8 +18,10 @@ bibliography: references.bib
 #| message: false
 
 library(tidyverse)
-```
+library(here)
 
+analysis_data <- read_csv(here("data/analysis_data/analysis_data.csv"))
+```
 
 # Introduction
 
@@ -27,19 +29,269 @@ Urban spaces can be void of vast expanses of nature, whether it be grass fields,
 
 In this paper we look at street tree data from Toronto's roadside trees, and discern any patterns or observations to suggest further investigation. We first look at the most populous tree species in Toronto, an the ward with the most trees. We will also look at tree diameter, which can indicate the approximate age of trees in the city, and look for anomalies and interesting summaries there. Finally we look at the least populous tree species and figure out where Toronto's native trees stack up.
 
-Section 2 will outline the source of this data. Section 3 covers the graphs depicting interesting findings and trends. Section 4 is where discussion will be made about those findings and trends, as well as theories to explain them. Finally, section 4 discusses any weakness and limitations that can be considered for another report.
+Section 2 will outline the source of this data, and highlight key varaibles to be used in the model. Section 3 covers the construction and rationale of the model. Section 4 is where the model results will be outlined. Finally, section 5 discusses key takeaways from the data and the model, and addresses weaknesses and limitations that can be considered for another report.
 
 # Data {#sec-data}
 
+## Measurement
+
 All collection and analysis of data was done using R, a free programming language designed for data scientists (@citeR). Additionally, tidycerse (@citeTidyverse), dplyr (@citeDplyr), and janitor (@citeJanitor) have been used as packages to read, clean, and present data. Finally OpenData Toronto is an online database containing thousands of datasets pertaining to the City of Toronto, which is where the data for this paper was initially accessed (@citeOpendatatoronto).
 
- Rohan Alexander's book, *Telling Stories with Data* was referenced for troubleshooting and general ideas for data analysis (@tellingstories) 
+Rohan Alexander's book, *Telling Stories with Data* was referenced for troubleshooting and general ideas for data analysis (@tellingstories)
 
 The data comes from Urban Forestry, an organization dedicated to Toronto's urban forests. They work towards planting more trees, and protecting existing trees from damage due to individuals, private entities, and public entities (@urbanforestry). This particular dataset is called Street Tree Data, and focuses on city-owned trees located on roads. This information would be most likely used by city planners and road maintenance, ensuring snow plows and street dusters don't impede on any trees that line the roads. It is important to note that there may be some privately owned trees listed among the municipal trees, as they may be of interest with regards to road maintenance or other city services.
 
 Street Tree Data contains around 32000 observations, each observation being an individual tree. Each observation has a general id for data analysis, as well as an structure id, telling us if the tree is part of an existing structure or building. Location is covered in 4 ways: first the address number (address) and streetname (streetname) of nearest postal delivery address, next is the street name and the nearest 2 cross streets (crosstreet1 and crossstreet2), third being the ward number (ward), and finally geometry containain a tuple of general latitude and longitude. Street Tree contains both the species name (botanical_name) and the common English name common_name), however we have decided to use only the species name to avoid confusion between similar sounding trees. Common English names will be provided for species of key interest. There is also measurement called dbh_trunk. This is the standard method forestry experts use to measure the diameter of a tree. Depending on where the measurement is taking placce, the breast height changes. For example, in Canada it is 1.3 meters, while the US uses 4.5 feet. This methodology is comprised of old conventions used to measure trees used throughout the world (@dbh). The result is a complicated mess where breast_height is a vague term that changes by location. Additionally, the convention breaks down when the tree is anything but vertically upright and straight. As a result, the DBH is more of an estimate rather than a sturdy measurement.
 
+## `ward`
+
+```{r}
+#| label: fig-1
+#| fig-cap: Acer plantiodes distribution across Toronto wards up to September 2024
+#| echo: false
+#| warning: false
+#| message: false
+
+# Gather counts of Acer plantiodes per ward
+ward_count <- analysis_data %>%
+  filter(botanical_name == "Acer platanoides") %>%
+  count(ward, sort = TRUE)
+
+ward_count |> 
+  ggplot(aes(x = ward, y = n)) +
+  geom_col() +
+  theme_minimal() +
+  labs(x = "Ward",
+       y = "Acer platanoides count")
+```
+
+## `streetname`
+
+```{r}
+#| label: fig-2
+#| fig-cap: Acer plantiodes distribution across Toronto streets up to September 2024
+#| echo: false
+#| warning: false
+#| message: false
+
+# Gather 10 streets with the highest counts of Acer platanoides
+street_count <- analysis_data %>%
+  filter(botanical_name == "Acer platanoides") %>%
+  count(streetname, sort = TRUE) %>%
+  head(10)
+
+street_count |> 
+  ggplot(aes(x = n, y = streetname)) +
+  geom_col() +
+  theme_minimal() +
+  labs(x = "Street",
+       y = "Acer platanoides count")
+```
+
+## `crossstreet1` & `crossstreet2`
+
+```{r}
+#| label: fig-3
+#| fig-cap: Acer plantiodes distribution across Toronto crossstreets up to September 2024
+#| echo: false
+#| warning: false
+#| message: false
+
+# Gather 10 cross streets with the highest counts of Acer platanoides
+crossstreet1_count <- analysis_data %>%
+  filter(botanical_name == "Acer platanoides") %>%
+  count(crossstreet1, sort = TRUE) %>%
+  head(10)
+
+crossstreet1_count |> 
+  ggplot(aes(x = n, y = crossstreet1)) +
+  geom_col() +
+  theme_minimal() +
+  labs(x = "Cross Street",
+       y = "Acer platanoides count")
+```
+
+```{r}
+#| label: fig-4
+#| fig-cap: Acer plantiodes distribution across Toronto crossstreets up to September 2024
+#| echo: false
+#| warning: false
+#| message: false
+
+# Gather 10 cross streets with the highest counts of Acer platanoides
+crossstreet2_count <- analysis_data %>%
+  filter(botanical_name == "Acer platanoides") %>%
+  count(crossstreet2, sort = TRUE) %>%
+  head(10)
+
+crossstreet2_count |> 
+  ggplot(aes(x = n, y = crossstreet2)) +
+  geom_col() +
+  theme_minimal() +
+  labs(x = "Cross Street",
+       y = "Acer platanoides count")
+```
+
+# Model
+
+Our modeling strategy estimates the polling support percentages for Kamala Harris and Donald Trump during the 2024 US election campaign. To achieve this, we constructed two linear models for each candidate, aimed at understanding how their support evolves over time while accounting for variations between pollsters. The goal is to balance simplicity and interpretability, while capturing key variations in polling trends.
+
+Specifically, we consider two types of model for each candidate individually:
+
+-   **Model 1**: A multiple linear regression model predicting polling percentage (pct) as a function of end_date (the date when polling concluded), transparency_score (an indicator of how transparent and reliable a poll is), and numeric_grade (an independent quality rating for pollsters).
+-   **Model 2**: An extension of Model 1 that additionally includes the pollster information (pollster) to account for variability introduced by different polling organizations.
+
+The models are built for both Kamala Harris and Donald Trump to facilitate a comparative analysis, aiming to understand their respective polling dynamics and how these vary by time, pollster quality, and polling organization.
+
+**Model 1: Linear Model by Date, Transparency Score, and Grade**\
+\begin{align}  
+y_i &= \beta_0 + \beta_1 \cdot \text{end\_date}_i + \beta_2 \cdot \text{transparency\_score}_i + \beta_3 \cdot \text{numeric\_grade}_i + \epsilon_i \\
+\epsilon_i &\sim \text{Normal}(0, \sigma^2)
+\end{align}
+
+where:
+
+-   $y_i$ represents the polling percentage of support for the candidate in poll $i$.
+-   $beta_0$ is the intercept, representing the baseline support when all predictors are at their baseline levels.
+-   $beta_1$, $\beta_2$, $\beta_3$ represent the coefficients for the predictors: end_date, transparency_score, and numeric_grade, respectively.
+-   $epsilon_i$ is the error term, which is assumed to be normally distributed with variance $\sigma^2$.
+
+This model helps capture the general trend in polling support over time while adjusting for the quality of the poll itself.
+
+**Model 2: Linear Model by Date and Pollster** \begin{align}  
+y_i &= \beta_0 + \beta_1 \cdot \text{end\_date}_i + \gamma_{p[i]} + \epsilon_i \\
+\epsilon_i &\sim \text{Normal}(0, \sigma^2)
+\end{align}
+
+where:
+
+-   $\gamma_{p[i]}$ represents the fixed effect for pollster $p$ conducting poll $i$, which captures variability across different polling organizations.
+-   All other terms are as defined in Model 1.
+
+This model extends the first by considering pollster-specific differences in polling results. Different pollsters may have different methodologies or biases, which are accounted for by including pollster as a categorical variable.
+
+**Model Predictions and Augmentation**
+
+The models were then used to predict polling percentages, which were added to the original datasets as new columns: - For Kamala Harris, the predicted values (fitted_date and fitted_date_pollster) were added to the just_harris_high_quality dataset. - For Donald Trump, the analogous predicted values (fitted_date and fitted_date_pollster) were added to the just_trump_high_quality dataset.
+
+These augmented datasets allowed for a comprehensive comparison of predicted versus observed polling percentages, and facilitated visualization of how support for each candidate evolved over time.
+
+## Model set-up
+
+To model the polling percentages for Kamala Harris and Donald Trump, we used multiple linear regression to estimate the relationship between polling percentages (pct) and several predictors, including the poll’s end date, pollster quality, and pollster organization. This section provides a detailed breakdown of how we constructed the models, including the selection of predictors and the data processing steps taken to ensure that the models capture meaningful patterns.
+
+## Data Preparation
+
+The data used for modeling included high-quality election polling data for both Kamala Harris and Donald Trump. The data was filtered to include only polls that met a quality threshold (numeric_grade \>= 2.5), ensuring that the analyses are based on reliable information. This threshold was chosen based on an examination of pollster ratings, and it helped exclude lower-quality polls that might introduce noise into the analysis.
+
+Additionally, any missing values for state were replaced with “National” to indicate that those polls were not specific to any state. This allowed us to effectively categorize national polls alongside state-level polls for the purposes of modeling.
+
+The key variables used in the models were:
+
+-   **end_date:** The date on which polling concluded. This variable was treated as a continuous measure of time, capturing trends in polling over the campaign period.
+-   **transparency_score:** A score reflecting the transparency of the pollster. This score was included to adjust for the quality of information provided by the polling organization.
+-   **numeric_grade:** A numeric score assigned to the pollster to indicate overall quality. Higher scores indicate higher pollster reliability.
+-   **pollster:** The polling organization conducting the poll. This categorical variable was included in Model 2 to account for differences between pollsters in methodology, sampling, or potential biases.
+
+## Feature Selection
+
+We used the following predictors to model the polling percentage (pct) for both candidates:
+
+**1.Temporal Trend (end_date):** - The end date of polling was included to capture changes in candidate support over time. Including time-based effects helped account for general campaign dynamics, such as events that might influence voter opinion.
+
+**2.Pollster Quality Indicators (transparency_score and numeric_grade):** - These two variables represent measures of poll quality. The inclusion of transparency_score and numeric_grade allowed us to adjust for potential biases that could result from low-quality polling data. By incorporating these scores, the model effectively accounts for the fact that polls with higher transparency and quality are more reliable.
+
+**3.Pollster Organization (pollster):** - In Model 2, the pollster variable was included as a categorical factor. This allows us to control for differences among polling organizations, which may have distinct methodologies, levels of accuracy, or biases. For instance, some pollsters might consistently report higher or lower percentages for specific candidates, and including this factor helps mitigate those effects.
+
+## Model Training and Prediction
+
+-   Model 1 was fitted to predict pct as a function of end_date, transparency_score, and numeric_grade. This model helps in understanding the general trends in candidate support, while adjusting for the quality of the polls included.
+-   Model 2 added pollster as an additional predictor, creating a richer model that accounts for differences between polling agencies. The inclusion of pollster captures variability related to different polling methodologies or inherent pollster biases.
+-   Both models were trained using the lm() function in R, which estimates the parameters by minimizing the sum of squared residuals. The models were fit separately for Kamala Harris and Donald Trump to allow for a detailed comparison of their respective polling trends.
+-   After fitting the models, predictions were made and added to the dataset for each candidate. This allowed us to compare actual polling percentages with those predicted by the models. Specifically:
+-   Model 1 Predictions (fitted_date) captured the predicted polling percentage based on date and poll quality.
+-   Model 2 Predictions (fitted_date_pollster) additionally included the effect of each pollster, providing a more nuanced estimate that adjusts for pollster-level effects.
+
+## Model Assumptions
+
+The following assumptions underlie the multiple linear regression models used:
+
+-   **Linearity:** We assume that the relationship between the predictors (end_date, transparency_score, numeric_grade, and pollster) and the outcome (pct) is linear.
+-   **Independence:** Each poll is treated as an independent observation. We assume that polling percentages from different polls are not influenced by one another.
+-   **Homoscedasticity:** The variance of the residuals is assumed to be constant across all levels of the independent variables.
+-   **Normality of Residuals:** The error term (\epsilon\_i) is assumed to be normally distributed, which is required for the validity of hypothesis testing.
+-   **No Multicollinearity:** We checked that the predictors are not highly correlated, to ensure that the coefficients estimated by the models are reliable and that multicollinearity does not bias the results.
+
+These assumptions are crucial for ensuring that the model coefficients are unbiased and that the predictions are meaningful.
+
+## Cross-Validation and Overfitting Prevention
+
+To evaluate the robustness of our models, a train-test split was applied. The training data was used to fit the model, while the test data (which the model had not seen during training) was used to evaluate model performance. This approach helps in identifying overfitting, ensuring that the model can generalize beyond the specific dataset used for training.
+
+For future improvements, we could explore the use of cross-validation for further robustness checks, ensuring that the model’s performance is not overly dependent on a particular train-test split.
+
+### Model justification
+
+The choice of multiple linear regression models for predicting the polling support of Kamala Harris and Donald Trump is driven by several key considerations regarding the nature of the data and the objectives of the analysis. Below, we provide a detailed justification for the chosen models and predictors, discuss the reasoning behind the modeling choices, and address limitations and alternatives considered during the process.
+
+## Why Multiple Linear Regression?
+
+**Multiple linear regression (MLR)** was selected as the modeling framework due to its ability to estimate relationships between multiple predictors and a continuous outcome variable—in this case, the percentage of voter support (pct). MLR provides a straightforward approach to quantify the impact of each predictor on polling percentages, allowing us to make inferences about the strength and direction of these relationships.
+
+The primary motivations for using multiple linear regression in this context include:
+
+**1.Simplicity and Interpretability:** - Linear models offer a high degree of interpretability. Each coefficient in the model provides a clear indication of the expected change in voter support given a one-unit change in the corresponding predictor, holding all other predictors constant. This is crucial for understanding how time, poll quality, and pollster contribute to support dynamics.
+
+**2.Ability to Control for Multiple Predictors:** - MLR allows us to control for several influential factors simultaneously, such as time (end_date), pollster quality (transparency_score and numeric_grade), and the polling organization (pollster). By accounting for these variables, we can isolate the individual impact of each predictor and better understand the underlying factors that affect polling outcomes.
+
+**3.Comparison Between Candidates:** - We built identical models for both Kamala Harris and Donald Trump, allowing for a side-by-side comparison of their polling trends over time. This consistency enables a clearer understanding of differences in support and trends across the two candidates.
+
+## Why These Specific Predictors?
+
+**1.End Date (end_date):** - The end date of polling is an essential predictor, as it captures temporal effects. Polling percentages often change over the course of a campaign due to events, news, and other dynamic factors. Including end_date helps us understand how support evolves over time.
+
+**2.Transparency Score (transparency_score) and Numeric Grade (numeric_grade):** - These variables were included as indicators of pollster quality. The transparency_score reflects how openly pollsters report their methods, and numeric_grade represents an independent rating of the pollster’s overall quality. - Including these predictors helps ensure that we account for potential biases introduced by lower-quality polls. For example, a positive coefficient on transparency_score would suggest that higher transparency is associated with higher or more reliable polling percentages for a given candidate.
+
+**3.Pollster (pollster):** - Pollster was included as a categorical variable in Model 2 to capture differences across polling organizations. Different pollsters have varying methodologies and biases, which can lead to systematic differences in reported polling percentages. - Including pollster allows the model to adjust for these variations, thereby improving the accuracy of the predictions.
+
+## Justification for Model Complexity
+
+-   **Model 1** is kept relatively simple, using end_date, transparency_score, and numeric_grade as predictors. This model is useful for understanding the general trend in polling support while accounting for poll quality.
+-   **Model 2** adds complexity by including the pollster (pollster) as a categorical predictor. This accounts for pollster-specific effects and helps to improve model accuracy by recognizing that different pollsters may report systematically different results. Given that different polling organizations use distinct methodologies, including this variable ensures that biases are appropriately adjusted.
+
+## Limitations of the Models
+
+**1.Assumptions of Linearity and Normality:** - The linear models assume that the relationship between predictors and the outcome is linear, and that the residuals are normally distributed. In reality, polling data may not always satisfy these assumptions, especially if there are non-linear trends in voter support or heavy-tailed distributions in the errors.
+
+**2.Potential for Omitted Variable Bias:** - While our models include several important predictors, there may still be unobserved factors influencing voter support that are not captured in the models. Examples include specific campaign events, candidate debates, or sudden shifts in voter sentiment.
+
+**3.Multicollinearity:** - The predictors transparency_score and numeric_grade both relate to poll quality and may be correlated. This could introduce multicollinearity, which makes it difficult to determine the individual effect of each predictor. However, we inspected the variance inflation factors (VIFs) to ensure that multicollinearity was not excessively high.
+
+**4.Non-Independence of Observations:** - Polls conducted by the same pollster over time might not be entirely independent, leading to autocorrelation in the data. While Model 2 partially addresses this by including pollster as a fixed effect, a more complex model (e.g., hierarchical or Bayesian) could better capture these dependencies.
+
+## Alternatives Considered
+
+**1.Logistic Regression:** - Logistic regression was considered as an alternative, but it was ultimately deemed unsuitable because the outcome variable (pct) is continuous, rather than binary. Logistic regression is appropriate for classification tasks where the outcome is binary (e.g., win or lose), but our goal is to predict support percentages, making multiple linear regression a more appropriate choice.
+
+**2.Bayesian Modeling:** - A Bayesian approach could provide richer insights by incorporating prior beliefs and estimating posterior distributions for model parameters. This could be particularly useful for incorporating prior knowledge about pollster biases or expected trends. However, for this study, we focused on linear regression to prioritize interpretability and computational simplicity.
+
+**3.Inclusion of State-Level Effects:** - An additional layer of complexity that could be added to the model is the inclusion of state-level effects to capture geographical variations in polling support. State-level data was available, but due to concerns over sample size in certain states, we opted not to include state as a random effect in this version of the models. Future iterations could explore adding a random effect for state to account for regional differences.
+
+## Evaluation Metrics
+
+The models were evaluated based on:
+
+-   **Root Mean Squared Error (RMSE):** To assess the goodness-of-fit for both models. Lower RMSE values indicate that the model predictions are close to the observed polling percentages.
+-   **Cross-Validation:** We used a train-test split to ensure that the model generalizes well to unseen data. This helps prevent overfitting, where the model might otherwise perform well on training data but poorly on new observations.
+
+## Summary
+
+Our modeling approach leverages multiple linear regression to capture the relationship between polling percentages and various time, quality, and methodological factors. By fitting separate models for Kamala Harris and Donald Trump, we are able to compare and contrast their polling trends while accounting for pollster quality and potential biases. The inclusion of pollster in Model 2 allows us to control for variability between polling organizations, enhancing the accuracy of the model’s predictions.
+
+The primary goal is to understand how support evolves over time and how it is influenced by the quality and methodology of the polling process. Despite some limitations, the models provide a useful framework for analyzing polling data, and future iterations could explore more sophisticated approaches such as Bayesian modeling or hierarchical random effects to improve robustness.
+
 # Results
+
 ```{r}
 #| echo: false
 #| warning: false
@@ -88,6 +340,7 @@ ward_count |>
   labs(x = "Ward",
        y = "Number of trees planted")
 ```
+
 @fig-2 shows the count of trees over each ward in Toronto. Toronto has 25 wards, each with varying land sizes and populations. Ward 2 takes the top spot for tree count, with Ward 3 trailing behind it. These wards are both in Toronto's west end, Etobicoke Centre, and Etobicoke- Lakeshore. Ward 13 and Ward 10 have the least amount of trees, being Spadina-Fort York and Toronto Centre.
 
 ```{r}
@@ -124,6 +377,7 @@ analysis_data |>
   labs(x = "DBH Diameter (cm)",
        y = "Tree Count")
 ```
+
 @fig-4 is a histogram of the frequency of certain tree-diameters across Toronto. The histogram has a very long tail to the left, indicating one or two trees having upwards of 815 cm of diameter.
 
 ```{r}
@@ -143,6 +397,7 @@ filter200_data |>
   labs(x = "DBH Diameter (cm)",
        y = "Tree Count")
 ```
+
 @fig-5 is the result of trimming large dbh_trunk observations from @fig-4. This gives us a better idea of where the average dbh is, which is around 8-12 cm. However, this average would have been made without the large DBH values mentioned earlier, which would skew this average to a higher number.
 
 \newpage
@@ -156,16 +411,18 @@ filter200_data |>
 While @fig-3 demonstrates that Acer platanoides isn't the most popoulous tree everywhere in Toronto, it also shows the potential dangers having non-native species have on places with little natural wildlife. Ward 13 has the fewest street trees in Toronto, and ther are still over 30 trees of a species known to be invasive and hamper the survival of native plants and trees. Additionally, since the downtown core is full of tall buildings which carry wind currents, the dispersal of Acer platanoides seeds seems inevitable, and will only exacerbate the troubling increasing in population of this invasive species, across Toronto and Southern Ontario. More care should be put into the planning of street trees, putting more empahsis on native trees in spaces with minial room for any trees to begin with.
 
 ## The lack of trees in Toronto-Centre
+
 @fig-2 shows the distribution of trees across the 25 wards of Toronto. Wards 2 and 3 top the rankings, at over 2000 individuals. This isn't a surprise as those wards are located in Etobicoke Centre and Etobicoke-Lakeshore, consisting mainly of suburbs and small pockets of woodland. On the other hand, Wards 10 and 13, Spadina-Fort York, and Toronto Centre, display a shocking lack of trees, at 500 or less. These wards make up a majority of Toronto's downtown core, which would explain the lack of trees. However, this could be a call to invest in more roadside and path side greenery. Implementing more trees either along big avenues such as university, or small roads servicing townhouses and condos, can help liven up what is considered by many to be a dull, drab section of the city, with endless rows of concrete and glass interspersed with concrete and brick and little else.
 
 Knowing that Ward 13 has the lowest amount of street trees across all of Toronto's wards, @fig-3 was made to investigate the tree species count in this ward. Unlike the city-wide trend of Acer platanoides being the most popoulous, the most popoulous tree in this ward is Gleditsia triacanthos, otherwise known as the Honey Locust. The honey Locust. The HOney Locust is a tree that grows moderately fast and resiliant against dry and salty- climates. This makes it ideal for windbreaking (@blair1990gleditsia). Windbreaking, as mentioned earlier, helps create inviting spaces in urban enviroments, especially for pedestrians. Using a tree such as Honey Locut makes sense therefore, in a crowded downtore core with large skyscrapers and condos, which funnel air and wind around them. The species is native to North America, but it's reach just barely makes into the southernmost areas of Ontario, making it technically a non-native species in Toronto (@blair1990gleditsia).
 
 ## Anomalies in DBH diameters and potential causes
-The spread of DBH diameters as seen in @fig-4 indicates that a small number of trees have extremely high DBH values. A DBH value of 800 for instance, means that the measured diameter of the tree is 8 meters! This is most likely an error on the part of the person in charge of inputting data at the time. There may have been a decimal missing from the entry, which would divide the offending dbh by 10. @fig-5 was made excluding any dbh_trunk values over 200 cm, to get a better look at the majority of all trees in Toronto. It shows a much clearer distribution of the vast majority of all dbh_trunk values in the data. The largest bin is located somewhere between 8 cm and 12 cm, indicating that the averaege diameter of Toronto's street trees is around that value as well. This suggests that most street trees are actually very young, and have not had much time to develop their trunks. This can be explained by initiatives to plant saplings along new or existing roads, potentially replacing older trees that had been cut down to make way for urban development. Larger trees are more rare either because they have been removed for urban developemnt, mentioned before, or as a result of storms and natural disasters. 
+
+The spread of DBH diameters as seen in @fig-4 indicates that a small number of trees have extremely high DBH values. A DBH value of 800 for instance, means that the measured diameter of the tree is 8 meters! This is most likely an error on the part of the person in charge of inputting data at the time. There may have been a decimal missing from the entry, which would divide the offending dbh by 10. @fig-5 was made excluding any dbh_trunk values over 200 cm, to get a better look at the majority of all trees in Toronto. It shows a much clearer distribution of the vast majority of all dbh_trunk values in the data. The largest bin is located somewhere between 8 cm and 12 cm, indicating that the averaege diameter of Toronto's street trees is around that value as well. This suggests that most street trees are actually very young, and have not had much time to develop their trunks. This can be explained by initiatives to plant saplings along new or existing roads, potentially replacing older trees that had been cut down to make way for urban development. Larger trees are more rare either because they have been removed for urban developemnt, mentioned before, or as a result of storms and natural disasters.
 
 ## Weaknesses and next steps
 
-Street Tree data is cumulative, meaning Urban Forestry has to manually update the status of each tree, which is an arduous task for over 30000 trees. As a result the data may be mismatched, with some trees having only been checked months or even years prior. This may be why @fig-4 is so skewed. There may have been errors in the way the data was inputted for certain trees, leading to misplaced decimals. A similar occurrence happened when observing the raw data, which can be seen in the Appendix. No additional information was provided by OpenData Toronto when viewing the dataset on their database, apart from who provided the data, Urban Forestry. Perhaps more detail on their part, including units of measurement for dbh_trunk, would have helped make this analysis much easier.Another limitation mentioned earlier is the inclusion of some privately-owned trees. 
+Street Tree data is cumulative, meaning Urban Forestry has to manually update the status of each tree, which is an arduous task for over 30000 trees. As a result the data may be mismatched, with some trees having only been checked months or even years prior. This may be why @fig-4 is so skewed. There may have been errors in the way the data was inputted for certain trees, leading to misplaced decimals. A similar occurrence happened when observing the raw data, which can be seen in the Appendix. No additional information was provided by OpenData Toronto when viewing the dataset on their database, apart from who provided the data, Urban Forestry. Perhaps more detail on their part, including units of measurement for dbh_trunk, would have helped make this analysis much easier.Another limitation mentioned earlier is the inclusion of some privately-owned trees.
 
 Next steps would be augmenting this data with other data from Toronto's roads, or other trees, to see if any comparisions or correlations can be drawn there. Does vehicle traffic impact the trees lining a certain road, and if so, how long would it take for the effects to be noticeable? Does the distribution of street trees tell us anything about income disparity, fire risk, or quality of life within Toronto? This report can be used as a launching pad for further investigations, using key takeways from this report as drivers for further questions.
 
@@ -180,5 +437,3 @@ With newer report, pressure will be put upon Urban Forestry to better curtail th
 While cleaning that dataset, some inconsisten values were discovered. A particular species of tree, Salix x sepulcralis, had it's name misspelled in the dataset. This may have come from using special characters that could not be saved onto the dataset, resulting in a garbled name. An additional step was taken to restore the correct botanical name, using the common name as reference. Similarly, one observation did not have a ward location allocated. This was remedied by reading the globval coordinates from geometry, a varaible in the raw data file that shares the latitude and longtitude of the tree individual. Using these coordinates, and the address number, the general location for this tree was determined, along with its ward location. The ward entry for this observataion was updated accordingly.
 
 # References
-
-
