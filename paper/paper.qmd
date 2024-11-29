@@ -45,6 +45,8 @@ Street Tree Data contains around 32000 observations, each observation being an i
 
 ## `ward`
 
+Ward is one of several location varaibles included in the Street Trees dataset. It lists the ward location of each observation (tree) in the city. Toronto is broken up into municipal wards, who is represented in City Hall by a councillor. Wards vary in size and population, which may have an impact in the spread of Acer platanoides. For example, one of the largest Wards is Etobicoke North, which forms the north-western boundary of Toronto. Given its size and distance from downtown Toronto, it has ample room to host large swaths of forests, and have its roads lined with trees, increasing the possibility of Acer platanoides finding its way here. Toronto-Centre is the smallest ward by far, and being situated in downtown Toronto, is more dense with human infrastructure. There is less space for Acer platanoides to grow here, but the few green spots here could be suceptible to Acer platanoides.
+
 ```{r}
 #| label: fig-1
 #| fig-cap: Acer plantiodes distribution across Toronto wards up to September 2024
@@ -65,7 +67,11 @@ ward_count |>
        y = "Acer platanoides count")
 ```
 
+According to @fig-1, Etobicoke North (Ward 2) hosts the most trees of the species Acer platanoides, and Toronto Centre (Ward 13) hosts the least. This falls in line with what was said before.
+
 ## `streetname`
+
+Anoter location variable in the Street Trees dataset, `streetname` records the street each observation(tree) lies on. Streets come in many sizes and lengths across Toronto. Arterial streets such as Bloor st / Danforth Ave might be able to hold more trees due to their length, but given their capacity, raod designers may have opted to not leave space for tree growth alon certain stretches. On the other end of the spectrum, small roads such as Eireann Quay, will have less street length for trees, but they may be quiet roads which prioritze natural elements such as trees.
 
 ```{r}
 #| label: fig-2
@@ -87,9 +93,9 @@ street_count |>
   labs(x = "Street",
        y = "Acer platanoides count")
 ```
-
+@fig-2 shows that Keele street holds the most amount of Acer platanoides in Toronto. Keele St is a North-South arterial road that starts at the north-eastern tip of High Park. This suggests that proximity to large parkscapes such as High Park, may have an influence in the spread of Acer platanoides.
 ## `crossstreet1` & `crossstreet2`
-
+While `streetname` covers the street a tree lies upon, `crossstreet1` & `crossstreet2` tells us what streets (if any) are in close proximity to the tree. This augments `streetname` by narrowing down the general location of the tree to specific intersections. Similarly to `streetname`, small streets intersection with other small streets may may be places where street trees are planted. Depending on the size and configuration of the intersection, there may be more, or less space for trees 
 ```{r}
 #| label: fig-3
 #| fig-cap: Acer plantiodes distribution across Toronto crossstreets up to September 2024
@@ -131,7 +137,7 @@ crossstreet2_count |>
   labs(x = "Cross Street",
        y = "Acer platanoides count")
 ```
-
+Comparing @fig-4 & @fig-5, most street trees are placed well clear of intersections. Of the streets that are located in proximity to an Acer platanoides, Bathurst St and Mount Pleasant Rd stick out. Both are prominent in @fig-4 and @fig-5. Augmenting this with @fig-3, we can see that Bathurst St is seen in all three graphs, suggesting than many of Acer platanoides' trees grow along that corridor, and perhaps this is how they spread across the city.
 # Model
 
 Our modeling strategy estimates the polling support percentages for Kamala Harris and Donald Trump during the 2024 US election campaign. To achieve this, we constructed two linear models for each candidate, aimed at understanding how their support evolves over time while accounting for variations between pollsters. The goal is to balance simplicity and interpretability, while capturing key variations in polling trends.
