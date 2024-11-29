@@ -12,6 +12,7 @@
 library(opendatatoronto)
 library(tidyverse)
 library(dplyr)
+library(arrow)
 
 
 #### Download data ####
@@ -32,4 +33,5 @@ data
 
 #### Save data ####
 write_csv(data, "data/raw_data/raw_data.csv") 
-         
+write_parquet(data, "data/raw_data/raw_data.parquet") 
+

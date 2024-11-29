@@ -29,5 +29,6 @@ data$dbh_trunk |> min() <= 0
 
 # Test for NAs in cleaned_data (should be FALSE)
 all(is.na(data$ward))
-all(is.na(data$botanical_name))
-
+all(is.na(data$streetname))
+all(is.na(data$crossstreet1))
+all(is.na(data$crossstreet2))

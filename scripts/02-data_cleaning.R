@@ -10,8 +10,10 @@
 #### Workspace setup ####
 library(tidyverse)
 library(dplyr)
+library(arrow)
 
 #### Clean data ####
+raw_data <- read_parquet("data/raw_data/raw_data.parquet")
 raw_data <- read_csv("data/raw_data/raw_data.csv")
 
 cleaned_data <-
@@ -24,5 +26,6 @@ cleaned_data <-
   tidyr::drop_na() # Filter out any na values
 
 #### Save data ####
+write_parquet(cleaned_data, "data/analysis_data/analysis_data.parquet")
 write_csv(cleaned_data, "data/analysis_data/analysis_data.csv")
 
