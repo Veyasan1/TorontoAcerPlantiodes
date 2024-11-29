@@ -44,7 +44,6 @@ The data comes from Urban Forestry, an organization dedicated to Toronto's urban
 Street Tree Data contains around 32000 observations, each observation being an individual tree. Each observation has a general id for data analysis, as well as an structure id, telling us if the tree is part of an existing structure or building. Location is covered in 4 ways: first the address number (address) and streetname (streetname) of nearest postal delivery address, next is the street name and the nearest 2 cross streets (crosstreet1 and crossstreet2), third being the ward number (ward), and finally geometry containain a tuple of general latitude and longitude. Street Tree contains both the species name (botanical_name) and the common English name common_name), however we have decided to use only the species name to avoid confusion between similar sounding trees. Common English names will be provided for species of key interest. There is also measurement called dbh_trunk. This is the standard method forestry experts use to measure the diameter of a tree. Depending on where the measurement is taking placce, the breast height changes. For example, in Canada it is 1.3 meters, while the US uses 4.5 feet. This methodology is comprised of old conventions used to measure trees used throughout the world (@dbh). The result is a complicated mess where breast_height is a vague term that changes by location. Additionally, the convention breaks down when the tree is anything but vertically upright and straight. As a result, the DBH is more of an estimate rather than a sturdy measurement.
 
 ## `ward`
-
 Ward is one of several location varaibles included in the Street Trees dataset. It lists the ward location of each observation (tree) in the city. Toronto is broken up into municipal wards, who is represented in City Hall by a councillor. Wards vary in size and population, which may have an impact in the spread of Acer platanoides. For example, one of the largest Wards is Etobicoke North, which forms the north-western boundary of Toronto. Given its size and distance from downtown Toronto, it has ample room to host large swaths of forests, and have its roads lined with trees, increasing the possibility of Acer platanoides finding its way here. Toronto-Centre is the smallest ward by far, and being situated in downtown Toronto, is more dense with human infrastructure. There is less space for Acer platanoides to grow here, but the few green spots here could be suceptible to Acer platanoides.
 
 ```{r}
@@ -66,11 +65,9 @@ ward_count |>
   labs(x = "Ward",
        y = "Acer platanoides count")
 ```
-
 According to @fig-1, Etobicoke North (Ward 2) hosts the most trees of the species Acer platanoides, and Toronto Centre (Ward 13) hosts the least. This falls in line with what was said before.
 
 ## `streetname`
-
 Anoter location variable in the Street Trees dataset, `streetname` records the street each observation(tree) lies on. Streets come in many sizes and lengths across Toronto. Arterial streets such as Bloor st / Danforth Ave might be able to hold more trees due to their length, but given their capacity, raod designers may have opted to not leave space for tree growth alon certain stretches. On the other end of the spectrum, small roads such as Eireann Quay, will have less street length for trees, but they may be quiet roads which prioritze natural elements such as trees.
 
 ```{r}
@@ -94,8 +91,10 @@ street_count |>
        y = "Acer platanoides count")
 ```
 @fig-2 shows that Keele street holds the most amount of Acer platanoides in Toronto. Keele St is a North-South arterial road that starts at the north-eastern tip of High Park. This suggests that proximity to large parkscapes such as High Park, may have an influence in the spread of Acer platanoides.
+
 ## `crossstreet1` & `crossstreet2`
 While `streetname` covers the street a tree lies upon, `crossstreet1` & `crossstreet2` tells us what streets (if any) are in close proximity to the tree. This augments `streetname` by narrowing down the general location of the tree to specific intersections. Similarly to `streetname`, small streets intersection with other small streets may may be places where street trees are planted. Depending on the size and configuration of the intersection, there may be more, or less space for trees 
+
 ```{r}
 #| label: fig-3
 #| fig-cap: Acer plantiodes distribution across Toronto crossstreets up to September 2024
@@ -138,16 +137,12 @@ crossstreet2_count |>
        y = "Acer platanoides count")
 ```
 Comparing @fig-4 & @fig-5, most street trees are placed well clear of intersections. Of the streets that are located in proximity to an Acer platanoides, Bathurst St and Mount Pleasant Rd stick out. Both are prominent in @fig-4 and @fig-5. Augmenting this with @fig-3, we can see that Bathurst St is seen in all three graphs, suggesting than many of Acer platanoides' trees grow along that corridor, and perhaps this is how they spread across the city.
+
 # Model
 
-Our modeling strategy estimates the polling support percentages for Kamala Harris and Donald Trump during the 2024 US election campaign. To achieve this, we constructed two linear models for each candidate, aimed at understanding how their support evolves over time while accounting for variations between pollsters. The goal is to balance simplicity and interpretability, while capturing key variations in polling trends.
+Our modeling strategy estimates street trees by botanical name. To achieve this, I created a linear model using location variables as predictors. The goal is to see if Acer plnatoides has a distinct spread by location
 
-Specifically, we consider two types of model for each candidate individually:
-
--   **Model 1**: A multiple linear regression model predicting polling percentage (pct) as a function of end_date (the date when polling concluded), transparency_score (an indicator of how transparent and reliable a poll is), and numeric_grade (an independent quality rating for pollsters).
--   **Model 2**: An extension of Model 1 that additionally includes the pollster information (pollster) to account for variability introduced by different polling organizations.
-
-The models are built for both Kamala Harris and Donald Trump to facilitate a comparative analysis, aiming to understand their respective polling dynamics and how these vary by time, pollster quality, and polling organization.
+The model created uses multiple linear regression, predicting botanical name (`botanical_name`) asa function of 4 location varaibles, `ward` (city ward), `streetname`(tree street is on/nearby), and `crossstreet1` & `crossstreet2` (nearest intersecting streets, if applicable).
 
 **Model 1: Linear Model by Date, Transparency Score, and Grade**\
 \begin{align}  
@@ -157,72 +152,54 @@ y_i &= \beta_0 + \beta_1 \cdot \text{end\_date}_i + \beta_2 \cdot \text{transpar
 
 where:
 
--   $y_i$ represents the polling percentage of support for the candidate in poll $i$.
--   $beta_0$ is the intercept, representing the baseline support when all predictors are at their baseline levels.
--   $beta_1$, $\beta_2$, $\beta_3$ represent the coefficients for the predictors: end_date, transparency_score, and numeric_grade, respectively.
+-   $y_i$ represents the botanical name of the tree $i$.
+-   $beta_0$ is the intercept.
+-   $beta_1$, $\beta_2$, $\beta_3$ , $\beta_4$ represent the coefficients for the predictors: `ward`, `streetname`, `crosstreet1`, and `crossstreet2`, respectively.
 -   $epsilon_i$ is the error term, which is assumed to be normally distributed with variance $\sigma^2$.
 
-This model helps capture the general trend in polling support over time while adjusting for the quality of the poll itself.
-
-**Model 2: Linear Model by Date and Pollster** \begin{align}  
-y_i &= \beta_0 + \beta_1 \cdot \text{end\_date}_i + \gamma_{p[i]} + \epsilon_i \\
-\epsilon_i &\sim \text{Normal}(0, \sigma^2)
-\end{align}
-
-where:
-
--   $\gamma_{p[i]}$ represents the fixed effect for pollster $p$ conducting poll $i$, which captures variability across different polling organizations.
--   All other terms are as defined in Model 1.
-
-This model extends the first by considering pollster-specific differences in polling results. Different pollsters may have different methodologies or biases, which are accounted for by including pollster as a categorical variable.
+This model helps capture the general trend tree species across an array of location factors in Toronto.
 
 **Model Predictions and Augmentation**
 
-The models were then used to predict polling percentages, which were added to the original datasets as new columns: - For Kamala Harris, the predicted values (fitted_date and fitted_date_pollster) were added to the just_harris_high_quality dataset. - For Donald Trump, the analogous predicted values (fitted_date and fitted_date_pollster) were added to the just_trump_high_quality dataset.
-
-These augmented datasets allowed for a comprehensive comparison of predicted versus observed polling percentages, and facilitated visualization of how support for each candidate evolved over time.
+The models were then used to predict botanical names, which were added to the original datasets as new columns. The augmented dataset allowed for a comprehensive comparison of predicted versus observed botanical names, and facilitated visualization of how widespread certain species are across Toronto.
 
 ## Model set-up
 
-To model the polling percentages for Kamala Harris and Donald Trump, we used multiple linear regression to estimate the relationship between polling percentages (pct) and several predictors, including the poll’s end date, pollster quality, and pollster organization. This section provides a detailed breakdown of how we constructed the models, including the selection of predictors and the data processing steps taken to ensure that the models capture meaningful patterns.
+To model the species of street trees, we used multiple linear regression to estimate the relationship between tree species (`botanical_name`) and several lcoation predictors, including the ward, street name, and cross street names. This section provides a detailed breakdown of how we constructed the models, including the selection of predictors and the data processing steps taken to ensure that the models capture meaningful patterns.
 
 ## Data Preparation
 
-The data used for modeling included high-quality election polling data for both Kamala Harris and Donald Trump. The data was filtered to include only polls that met a quality threshold (numeric_grade \>= 2.5), ensuring that the analyses are based on reliable information. This threshold was chosen based on an examination of pollster ratings, and it helped exclude lower-quality polls that might introduce noise into the analysis.
-
-Additionally, any missing values for state were replaced with “National” to indicate that those polls were not specific to any state. This allowed us to effectively categorize national polls alongside state-level polls for the purposes of modeling.
+Very little data cleaning was employed. The only substantive thing that was done was filtering out extraneous varaibles that weren't going to be used in the analysis, such a `geometry`, or `common_name.` 
 
 The key variables used in the models were:
 
--   **end_date:** The date on which polling concluded. This variable was treated as a continuous measure of time, capturing trends in polling over the campaign period.
--   **transparency_score:** A score reflecting the transparency of the pollster. This score was included to adjust for the quality of information provided by the polling organization.
--   **numeric_grade:** A numeric score assigned to the pollster to indicate overall quality. Higher scores indicate higher pollster reliability.
--   **pollster:** The polling organization conducting the poll. This categorical variable was included in Model 2 to account for differences between pollsters in methodology, sampling, or potential biases.
+-   **botanical_name** The botanical name of a tree. This is usually 2 latin words, genus, and species, respoectively. This variable is a categorical variable, which means it takes in phrases.
+-   **ward:** The ward location within the City of Toronto (circa 2024). Wards are represented as categorical numbers, as opposed to numbers themselves.
+-   **streetname:** The name of the closes road the tree is located to. This is a  categorical variable, which sometimes states "None", to indicate the street tree is not near a road
+-   **crossstreet1:** Given a tree and the street it's on, this variable tells you where along the street the tree is roughly located, by providing an intersecting street. This is a  categorical variable
+-   **crossstreet2:** The same as `crossstreet1`, this is here to denote a second road intersecting the street. For a give tree, `crossstreet1` and `crossstreet2` can be identical. This is in the case the intersection is on one side, or if the intersecting road changes name. This is also a categorical variable
 
 ## Feature Selection
 
 We used the following predictors to model the polling percentage (pct) for both candidates:
 
-**1.Temporal Trend (end_date):** - The end date of polling was included to capture changes in candidate support over time. Including time-based effects helped account for general campaign dynamics, such as events that might influence voter opinion.
+**1.City Ward (ward):** - The most general location metric in the dataset. We are looking for relationship between species and location, so starting with 25 sections of the city is a good start.
 
-**2.Pollster Quality Indicators (transparency_score and numeric_grade):** - These two variables represent measures of poll quality. The inclusion of transparency_score and numeric_grade allowed us to adjust for potential biases that could result from low-quality polling data. By incorporating these scores, the model effectively accounts for the fact that polls with higher transparency and quality are more reliable.
+**2.Nearest Street (streetname):** - These next highest location data is the street name. This can help pinpoint specific roads that certain species grow along. Since many roads pass through wards, it can help paint a picture for trends seen in wards data.
 
-**3.Pollster Organization (pollster):** - In Model 2, the pollster variable was included as a categorical factor. This allows us to control for differences among polling organizations, which may have distinct methodologies, levels of accuracy, or biases. For instance, some pollsters might consistently report higher or lower percentages for specific candidates, and including this factor helps mitigate those effects.
+**3.Nearest Cross Street(s) (crossstreet1 & crossstreet2):** - Because streets can span across a ward, or multiple wards, knowing where slong the street a tree is located is helpful. Cross streets define a tree's nearest intersection. 
 
 ## Model Training and Prediction
 
--   Model 1 was fitted to predict pct as a function of end_date, transparency_score, and numeric_grade. This model helps in understanding the general trends in candidate support, while adjusting for the quality of the polls included.
--   Model 2 added pollster as an additional predictor, creating a richer model that accounts for differences between polling agencies. The inclusion of pollster captures variability related to different polling methodologies or inherent pollster biases.
--   Both models were trained using the lm() function in R, which estimates the parameters by minimizing the sum of squared residuals. The models were fit separately for Kamala Harris and Donald Trump to allow for a detailed comparison of their respective polling trends.
--   After fitting the models, predictions were made and added to the dataset for each candidate. This allowed us to compare actual polling percentages with those predicted by the models. Specifically:
--   Model 1 Predictions (fitted_date) captured the predicted polling percentage based on date and poll quality.
--   Model 2 Predictions (fitted_date_pollster) additionally included the effect of each pollster, providing a more nuanced estimate that adjusts for pollster-level effects.
+-   The model was fitted to predict botanical_name as a function of ward, streetname, crossstreet1 and crossstreet2. This model helps in understanding the general trends in tree species, across the City of Toronto.
+-   The model was trained using the lm() function in R, which estimates the parameters by minimizing the sum of squared residuals. 
+-   After fitting the model, predictions were made and added to the dataset. This allowed us to compare actual botanical name with those predicted by the models.
 
 ## Model Assumptions
 
 The following assumptions underlie the multiple linear regression models used:
 
--   **Linearity:** We assume that the relationship between the predictors (end_date, transparency_score, numeric_grade, and pollster) and the outcome (pct) is linear.
+-   **Linearity:** We assume that the relationship between the predictors (ward, streetname, crossstreet1, crossstreet2) and the outcome (botanical_name) is linear.
 -   **Independence:** Each poll is treated as an independent observation. We assume that polling percentages from different polls are not influenced by one another.
 -   **Homoscedasticity:** The variance of the residuals is assumed to be constant across all levels of the independent variables.
 -   **Normality of Residuals:** The error term (\epsilon\_i) is assumed to be normally distributed, which is required for the validity of hypothesis testing.
@@ -238,11 +215,11 @@ For future improvements, we could explore the use of cross-validation for furthe
 
 ### Model justification
 
-The choice of multiple linear regression models for predicting the polling support of Kamala Harris and Donald Trump is driven by several key considerations regarding the nature of the data and the objectives of the analysis. Below, we provide a detailed justification for the chosen models and predictors, discuss the reasoning behind the modeling choices, and address limitations and alternatives considered during the process.
+The choice of multiple linear regression models for predicting the speceis of street trees in Toronto is driven by several key considerations regarding the nature of the data and the objectives of the analysis. Below, we provide a detailed justification for the chosen models and predictors, discuss the reasoning behind the modeling choices, and address limitations and alternatives considered during the process.
 
 ## Why Multiple Linear Regression?
 
-**Multiple linear regression (MLR)** was selected as the modeling framework due to its ability to estimate relationships between multiple predictors and a continuous outcome variable—in this case, the percentage of voter support (pct). MLR provides a straightforward approach to quantify the impact of each predictor on polling percentages, allowing us to make inferences about the strength and direction of these relationships.
+**Multiple linear regression (MLR)** was selected as the modeling framework due to its ability to estimate relationships between multiple predictors and a outcome variable—in this case, the names of tree species (botnaical_name). MLR provides a straightforward approach to quantify the impact of each predictor on polling percentages, allowing us to make inferences about the strength and direction of these relationships.
 
 The primary motivations for using multiple linear regression in this context include:
 
@@ -254,20 +231,15 @@ The primary motivations for using multiple linear regression in this context inc
 
 ## Why These Specific Predictors?
 
-**1.End Date (end_date):** - The end date of polling is an essential predictor, as it captures temporal effects. Polling percentages often change over the course of a campaign due to events, news, and other dynamic factors. Including end_date helps us understand how support evolves over time.
+**1.Ward (ward):** - The city ward gives a general location for a street tree in Toronto. Given unique characteristics for each of the wards, we can use those to postulate reasons behind a specific species' prominence
 
-**2.Transparency Score (transparency_score) and Numeric Grade (numeric_grade):** - These variables were included as indicators of pollster quality. The transparency_score reflects how openly pollsters report their methods, and numeric_grade represents an independent rating of the pollster’s overall quality. - Including these predictors helps ensure that we account for potential biases introduced by lower-quality polls. For example, a positive coefficient on transparency_score would suggest that higher transparency is associated with higher or more reliable polling percentages for a given candidate.
+**2.Street (streetname):** - While wards provide a general idea of location, they come at the cost of precision. Streets can narrow down a location of a tree to a simple line or curve, as opposed to an area. Streets can also cross between wards, which provides potential reasoning for relationships between wards
 
-**3.Pollster (pollster):** - Pollster was included as a categorical variable in Model 2 to capture differences across polling organizations. Different pollsters have varying methodologies and biases, which can lead to systematic differences in reported polling percentages. - Including pollster allows the model to adjust for these variations, thereby improving the accuracy of the predictions.
-
-## Justification for Model Complexity
-
--   **Model 1** is kept relatively simple, using end_date, transparency_score, and numeric_grade as predictors. This model is useful for understanding the general trend in polling support while accounting for poll quality.
--   **Model 2** adds complexity by including the pollster (pollster) as a categorical predictor. This accounts for pollster-specific effects and helps to improve model accuracy by recognizing that different pollsters may report systematically different results. Given that different polling organizations use distinct methodologies, including this variable ensures that biases are appropriately adjusted.
+**3.Cross Streets (crossstreet1 and crossstreet2):** - Streets are often long lines, which is a problem for precision. Referencing cross-streets for our model can help pinpoint where exactly on a street, a tree is located. This brings the precision down to plots of land of a few square meters.
 
 ## Limitations of the Models
 
-**1.Assumptions of Linearity and Normality:** - The linear models assume that the relationship between predictors and the outcome is linear, and that the residuals are normally distributed. In reality, polling data may not always satisfy these assumptions, especially if there are non-linear trends in voter support or heavy-tailed distributions in the errors.
+**1.Assumptions of Linearity and Normality:** - The model assumes that the relationship between predictors and the outcome is linear, and that the residuals are normally distributed. In reality, polling data may not always satisfy these assumptions, especially if there are non-linear trends in voter support or heavy-tailed distributions in the errors.
 
 **2.Potential for Omitted Variable Bias:** - While our models include several important predictors, there may still be unobserved factors influencing voter support that are not captured in the models. Examples include specific campaign events, candidate debates, or sudden shifts in voter sentiment.
 
@@ -292,9 +264,7 @@ The models were evaluated based on:
 
 ## Summary
 
-Our modeling approach leverages multiple linear regression to capture the relationship between polling percentages and various time, quality, and methodological factors. By fitting separate models for Kamala Harris and Donald Trump, we are able to compare and contrast their polling trends while accounting for pollster quality and potential biases. The inclusion of pollster in Model 2 allows us to control for variability between polling organizations, enhancing the accuracy of the model’s predictions.
-
-The primary goal is to understand how support evolves over time and how it is influenced by the quality and methodology of the polling process. Despite some limitations, the models provide a useful framework for analyzing polling data, and future iterations could explore more sophisticated approaches such as Bayesian modeling or hierarchical random effects to improve robustness.
+Our modeling approach leverages multiple linear regression to capture the relationship between street trees and various location factors. The primary goal is to understand how location affects tree species and if Acer patanoides's prominence can be explained by location. Despite some limitations, the models provide a useful framework for analyzing polling data, and future iterations could explore more sophisticated approaches such as Bayesian modeling or hierarchical random effects to improve robustness.
 
 # Results
 
