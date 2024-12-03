@@ -1,76 +1,97 @@
 #### Preamble ####
 # Purpose: Replicated graphs from paper.qmd
 # Author: Veyasan Ragulan
-# Date: 20 September 2024
+# Date: 20 November 2024
 # Contact: veyasan.ragulan@mail.utoronto.ca
 # License: MIT
 # Pre-requisites: None
 # Any other information needed? None
 
 
-#### Workspace setup ####
 library(tidyverse)
+library(here)
+library(arrow)
+library(modelsummary)
 
-#### Load data ####
-analysis_data <- read_csv(here::here("data/analysis_data/analysis_data.csv"))
+analysis_data <- read_csv(here("data/analysis_data/analysis_data.csv"))
+model_data <- read_parquet(here::here("data/model_data/model_data.parquet"))
+model <- readRDS(here("models/model.rds"))
 
-### Replicate figures ###
-
-# Figure 1: Street tree count of 10 most popoulus tree species in Toronto up to September 2024
-top_species_count <- analysis_data %>%
+species_count <- analysis_data %>%
   count(botanical_name, sort = TRUE) %>%
   head(10)
 
-# Gather top 10 tree species by count (LLM usage was used to troubleshoot this function)
-top_species_count |> 
+species_count |> 
   ggplot(aes(y = botanical_name, x = n)) +
   geom_col() +
   theme_minimal() +
   labs(x = "Planted Trees",
        y = NULL)
 
-# Figure 2: Street tree count by Toronto wards up to September 2024
+# Gather counts of Acer plantiodes per ward
 ward_count <- analysis_data %>%
-  count(ward, sort = TRUE) %>%
-  head(10)
+  filter(botanical_name == "Acer platanoides") %>%
+  count(ward, sort = TRUE)
 
-# Gather counts of trees per ward
 ward_count |> 
   ggplot(aes(x = ward, y = n)) +
   geom_col() +
   theme_minimal() +
   labs(x = "Ward",
-       y = "Number of trees planted")
+       y = "Acer platanoides count")
 
-# Figure 3: Top 10 tree species count Toronto's Ward 13 (Toronto-Centre)
-ward13_species_count <- analysis_data %>%
-  filter(ward == "13") %>%
-  count(botanical_name, sort = TRUE) %>%
+# Gather 10 streets with the highest counts of Acer platanoides
+street_count <- analysis_data %>%
+  filter(botanical_name == "Acer platanoides") %>%
+  count(streetname, sort = TRUE) %>%
   head(10)
 
-ward13_species_count |> 
-  ggplot(aes(y = botanical_name, x = n)) +
+street_count |> 
+  ggplot(aes(x = n, y = streetname)) +
   geom_col() +
   theme_minimal() +
-  labs(x = "Planted Trees",
-       y = NULL)
+  labs(x = "Street",
+       y = "Acer platanoides count")
 
-# Figure 4: Distribution of Distance-at-Breast-Height diameter of all trees in Toronto up to September 2024
-analysis_data |> 
-  ggplot(mapping = aes(x = dbh_trunk)) +
-  geom_histogram() +
+# Gather 10 cross streets with the highest counts of Acer platanoides
+crossstreet1_count <- analysis_data %>%
+  filter(botanical_name == "Acer platanoides") %>%
+  count(crossstreet1, sort = TRUE) %>%
+  head(10)
+
+crossstreet1_count |> 
+  ggplot(aes(x = n, y = crossstreet1)) +
+  geom_col() +
   theme_minimal() +
-  labs(x = "DBH Diameter",
-       y = "Tree Count")
+  labs(x = "Cross Street",
+       y = "Acer platanoides count")
 
-# Figure 5: Distribution of Distance-at-Breast-Height diameter of all trees at or under 200 cm DBH in Toronto up to September 2024
-filter200_data <- analysis_data %>%
-  filter(dbh_trunk <= 200)
+crossstreet2_count <- analysis_data %>%
+  filter(botanical_name == "Acer platanoides") %>%
+  count(crossstreet2, sort = TRUE) %>%
+  head(10)
 
-filter200_data |> 
-  ggplot(aes(x = dbh_trunk)) +
-  geom_histogram(binwidth = 10) +
+crossstreet2_count |> 
+  ggplot(aes(x = n, y = crossstreet2)) +
+  geom_col() +
   theme_minimal() +
-  labs(x = "DBH Diameter (cm)",
-       y = "Tree Count")
+  labs(x = "Cross Street",
+       y = "Acer platanoides count")
 
+ggplot(model_data, aes(x = ward)) +
+  geom_point(aes(y = botanical_name), color = "black") +
+  geom_line(aes(y = fitted_name), color = "blue", linetype = "dotted") +
+  theme_classic() +
+  labs(y = "Botanical Name", x = "Ward", title = "Linear Model over Ward")
+
+ggplot(model_data, aes(x = streetname)) +
+  geom_point(aes(y = botanical_name), color = "black") +
+  geom_line(aes(y = fitted_name), color = "blue", linetype = "dotted") +
+  theme_classic() +
+  labs(y = "Botanical Name", x = "Ward", title = "Linear Model over Ward")
+
+ggplot(model_data, aes(x = crossstreet1)) +
+  geom_point(aes(y = botanical_name), color = "black") +
+  geom_line(aes(y = fitted_name), color = "blue", linetype = "dotted") +
+  theme_classic() +
+  labs(y = "Botanical Name", x = "Ward", title = "Linear Model over Ward")
