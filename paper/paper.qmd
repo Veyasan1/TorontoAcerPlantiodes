@@ -1,12 +1,12 @@
 ---
-title: "An abundance of invasive trees in Toronto and a lack of trees in the streets of Toronto's core. "
+title: "Examining the case behind Acer Platanoide's plight on Toronto's Street Trees "
 subtitle: ""
 author: 
   - Veyasan Ragulan
 thanks: "Code and data are available at: https://github.com/Veyasan1/STA3014-Paper1"
 date: today
 date-format: long
-abstract: "Tree- lined streets are an exceptional way to add nature to urban envirnoments. Using the Street Tree data from OpenData Toronto, this paper examines the patterns and trends in Toronto's street trees. Tree species count, count of trees by ward, and distribution of tree-diameters were analysed. Uncovered was a abundance of a non-native tree species, and a lack of trees on the streets of Toronto's core"
+abstract: "Acer plantiodes is an invasive species that has taken over the streets of Toronto. Using the Street Tree data from OpenData Toronto, this paper examines the patterns and trends behind this spread. A linear model was created to predict species based on ward, street and cross streets. Uncovered was a abundance of a non-native tree species, and a lack of trees on the streets of Toronto's core"
 format: pdf
 number-sections: true
 bibliography: references.bib
@@ -19,15 +19,21 @@ bibliography: references.bib
 
 library(tidyverse)
 library(here)
+library(arrow)
+library(modelsummary)
 
 analysis_data <- read_csv(here("data/analysis_data/analysis_data.csv"))
+model_data <- read_parquet(here::here("data/model_data/model_data.parquet"))
+model <- readRDS(here("models/model.rds"))
 ```
 
 # Introduction
 
 Urban spaces can be void of vast expanses of nature, whether it be grass fields, blooming flowers, or teaming and diverse natural wildlife. One simple way to tackle this is to incorporate nature within the urban landscape, such as with trees. Trees are a vital plant in the world, they take in carbon dioxide and provide oxygen, a key component in the air we breath. Urban areas are known for the excess in carbon dioxide, which only makes it seem natural that trees can live and perhaps thrive in such environments. One way cities have incorporated trees into the city are roadside trees. Trees line many of the cities highways, arterials, collectors, and small roads. Lines of trees lined alongside highways can act as a natural sound barrier by reflecting, scattering and absorbing nearby noises (@aais). Tree-lined streets can also alter the way wind affects pedestrians below them, creating a more hospitable environment to promote active transportation such as walking or biking (@beptree). It should be no surprise then, that many cities around the world, including Toronto, have incorporated trees into their landscape, in busy downtown centres, to sleepy suburbs, and everywhere in between.
 
-In this paper we look at street tree data from Toronto's roadside trees, and discern any patterns or observations to suggest further investigation. We first look at the most populous tree species in Toronto, an the ward with the most trees. We will also look at tree diameter, which can indicate the approximate age of trees in the city, and look for anomalies and interesting summaries there. Finally we look at the least populous tree species and figure out where Toronto's native trees stack up.
+Acer platanoides is a well known tree used in urban environments, especially after the demise of elm trees in the 1970s (@urbanforest). These trees are know for ‘a vigorous early growth rate, desirable form and size, the capacity to withstand many urban impacts (e.g. pavement, moderate levels of pollution, dusts, and dry soils) and the abilities to transplant well, grow on a wide variety of soils, and withstand ice and snow damage better than other maples’ (@norwaymaple). Being planted in cities, it's seeds can travel by wind across to more wooded suburbs, where the seeds can tolerate shade for extended periods of time (@urbanforest). However, as it's common name suggests, it is not a native species to Canada, instead brought here by European explorers and settlers. While not a very invasive species, taking over just 9% of Southern Ontario's forests, it does so by harming other native plants and trees (@urbanforests). More attention should be cast on the spread of this tree, as it has the potential to devastate Toronto's and Southern Ontario's forests in the years to come.
+
+In this paper we look at street tree data from Toronto's roadside trees, and discern any patterns or observations behind the rise of Acer Platanoides. To do this, a linear model was created to predict botanical_name. Predictors include ward, streetname, and crosstreet1 and crossstreet2. The linear model uncovered TO BE COMPLETED
 
 Section 2 will outline the source of this data, and highlight key varaibles to be used in the model. Section 3 covers the construction and rationale of the model. Section 4 is where the model results will be outlined. Finally, section 5 discusses key takeaways from the data and the model, and addresses weaknesses and limitations that can be considered for another report.
 
@@ -43,11 +49,34 @@ The data comes from Urban Forestry, an organization dedicated to Toronto's urban
 
 Street Tree Data contains around 32000 observations, each observation being an individual tree. Each observation has a general id for data analysis, as well as an structure id, telling us if the tree is part of an existing structure or building. Location is covered in 4 ways: first the address number (address) and streetname (streetname) of nearest postal delivery address, next is the street name and the nearest 2 cross streets (crosstreet1 and crossstreet2), third being the ward number (ward), and finally geometry containain a tuple of general latitude and longitude. Street Tree contains both the species name (botanical_name) and the common English name common_name), however we have decided to use only the species name to avoid confusion between similar sounding trees. Common English names will be provided for species of key interest. There is also measurement called dbh_trunk. This is the standard method forestry experts use to measure the diameter of a tree. Depending on where the measurement is taking placce, the breast height changes. For example, in Canada it is 1.3 meters, while the US uses 4.5 feet. This methodology is comprised of old conventions used to measure trees used throughout the world (@dbh). The result is a complicated mess where breast_height is a vague term that changes by location. Additionally, the convention breaks down when the tree is anything but vertically upright and straight. As a result, the DBH is more of an estimate rather than a sturdy measurement.
 
+## `botanical_name`
+
+To see why Acer platanoides is of interest in this paper, refer to @fig-1. The most planted street tree in Toronto is Acer platanoides, which has at least a 2x lead over any other tree in the data. This trend doesn't seem to be coincidental, and from prelimiary research, the prevalance might be worrisome. Therefore, the paper will use `botanical_name` as the target variable in a linear model, which can be filtered down to Acer platanoides later.
+
+```{r}
+#| label: fig-1
+#| fig-cap: 10 most populous street tree species in Toronto, Ontario
+#| echo: false
+#| warning: false
+#| message: false
+
+species_count <- analysis_data %>%
+  count(botanical_name, sort = TRUE) %>%
+  head(10)
+
+species_count |> 
+  ggplot(aes(y = botanical_name, x = n)) +
+  geom_col() +
+  theme_minimal() +
+  labs(x = "Planted Trees",
+       y = NULL)
+```
+
 ## `ward`
 Ward is one of several location varaibles included in the Street Trees dataset. It lists the ward location of each observation (tree) in the city. Toronto is broken up into municipal wards, who is represented in City Hall by a councillor. Wards vary in size and population, which may have an impact in the spread of Acer platanoides. For example, one of the largest Wards is Etobicoke North, which forms the north-western boundary of Toronto. Given its size and distance from downtown Toronto, it has ample room to host large swaths of forests, and have its roads lined with trees, increasing the possibility of Acer platanoides finding its way here. Toronto-Centre is the smallest ward by far, and being situated in downtown Toronto, is more dense with human infrastructure. There is less space for Acer platanoides to grow here, but the few green spots here could be suceptible to Acer platanoides.
 
 ```{r}
-#| label: fig-1
+#| label: fig-2
 #| fig-cap: Acer plantiodes distribution across Toronto wards up to September 2024
 #| echo: false
 #| warning: false
@@ -65,13 +94,13 @@ ward_count |>
   labs(x = "Ward",
        y = "Acer platanoides count")
 ```
-According to @fig-1, Etobicoke North (Ward 2) hosts the most trees of the species Acer platanoides, and Toronto Centre (Ward 13) hosts the least. This falls in line with what was said before.
+According to @fig-2, Etobicoke North (Ward 2) hosts the most trees of the species Acer platanoides, and Toronto Centre (Ward 13) hosts the least. This falls in line with what was said before.
 
 ## `streetname`
 Anoter location variable in the Street Trees dataset, `streetname` records the street each observation(tree) lies on. Streets come in many sizes and lengths across Toronto. Arterial streets such as Bloor st / Danforth Ave might be able to hold more trees due to their length, but given their capacity, raod designers may have opted to not leave space for tree growth alon certain stretches. On the other end of the spectrum, small roads such as Eireann Quay, will have less street length for trees, but they may be quiet roads which prioritze natural elements such as trees.
 
 ```{r}
-#| label: fig-2
+#| label: fig-3
 #| fig-cap: Acer plantiodes distribution across Toronto streets up to September 2024
 #| echo: false
 #| warning: false
@@ -90,13 +119,13 @@ street_count |>
   labs(x = "Street",
        y = "Acer platanoides count")
 ```
-@fig-2 shows that Keele street holds the most amount of Acer platanoides in Toronto. Keele St is a North-South arterial road that starts at the north-eastern tip of High Park. This suggests that proximity to large parkscapes such as High Park, may have an influence in the spread of Acer platanoides.
+@fig-3 shows that Keele street holds the most amount of Acer platanoides in Toronto. Keele St is a North-South arterial road that starts at the north-eastern tip of High Park. This suggests that proximity to large parkscapes such as High Park, may have an influence in the spread of Acer platanoides.
 
 ## `crossstreet1` & `crossstreet2`
 While `streetname` covers the street a tree lies upon, `crossstreet1` & `crossstreet2` tells us what streets (if any) are in close proximity to the tree. This augments `streetname` by narrowing down the general location of the tree to specific intersections. Similarly to `streetname`, small streets intersection with other small streets may may be places where street trees are planted. Depending on the size and configuration of the intersection, there may be more, or less space for trees 
 
 ```{r}
-#| label: fig-3
+#| label: fig-4
 #| fig-cap: Acer plantiodes distribution across Toronto crossstreets up to September 2024
 #| echo: false
 #| warning: false
@@ -117,7 +146,7 @@ crossstreet1_count |>
 ```
 
 ```{r}
-#| label: fig-4
+#| label: fig-5
 #| fig-cap: Acer plantiodes distribution across Toronto crossstreets up to September 2024
 #| echo: false
 #| warning: false
@@ -167,27 +196,15 @@ The models were then used to predict botanical names, which were added to the or
 
 To model the species of street trees, we used multiple linear regression to estimate the relationship between tree species (`botanical_name`) and several lcoation predictors, including the ward, street name, and cross street names. This section provides a detailed breakdown of how we constructed the models, including the selection of predictors and the data processing steps taken to ensure that the models capture meaningful patterns.
 
-## Data Preparation
-
-Very little data cleaning was employed. The only substantive thing that was done was filtering out extraneous varaibles that weren't going to be used in the analysis, such a `geometry`, or `common_name.` 
-
-The key variables used in the models were:
-
--   **botanical_name** The botanical name of a tree. This is usually 2 latin words, genus, and species, respoectively. This variable is a categorical variable, which means it takes in phrases.
--   **ward:** The ward location within the City of Toronto (circa 2024). Wards are represented as categorical numbers, as opposed to numbers themselves.
--   **streetname:** The name of the closes road the tree is located to. This is a  categorical variable, which sometimes states "None", to indicate the street tree is not near a road
--   **crossstreet1:** Given a tree and the street it's on, this variable tells you where along the street the tree is roughly located, by providing an intersecting street. This is a  categorical variable
--   **crossstreet2:** The same as `crossstreet1`, this is here to denote a second road intersecting the street. For a give tree, `crossstreet1` and `crossstreet2` can be identical. This is in the case the intersection is on one side, or if the intersecting road changes name. This is also a categorical variable
-
 ## Feature Selection
 
 We used the following predictors to model the polling percentage (pct) for both candidates:
 
-**1.City Ward (ward):** - The most general location metric in the dataset. We are looking for relationship between species and location, so starting with 25 sections of the city is a good start.
+**1.City Ward (ward):** - The most general location metric in the dataset. We are looking for relationship between species and location, so starting with 25 sections of the city is a good start. The city ward gives a general location for a street tree in Toronto. Given unique characteristics for each of the wards, we can use those to postulate reasons behind a specific species' prominence
 
-**2.Nearest Street (streetname):** - These next highest location data is the street name. This can help pinpoint specific roads that certain species grow along. Since many roads pass through wards, it can help paint a picture for trends seen in wards data.
+**2.Nearest Street (streetname):** - These next highest location data is the street name. This can help pinpoint specific roads that certain species grow along. Since many roads pass through wards, it can help paint a picture for trends seen in wards data. While wards provide a general idea of location, they come at the cost of precision. Streets can narrow down a location of a tree to a simple line or curve, as opposed to an area. Streets can also cross between wards, which provides potential reasoning for relationships between wards.
 
-**3.Nearest Cross Street(s) (crossstreet1 & crossstreet2):** - Because streets can span across a ward, or multiple wards, knowing where slong the street a tree is located is helpful. Cross streets define a tree's nearest intersection. 
+**3.Nearest Cross Street(s) (crossstreet1 & crossstreet2):** - Because streets can span across a ward, or multiple wards, knowing where slong the street a tree is located is helpful. Cross streets define a tree's nearest intersection. Streets are often long lines, which is a problem for precision. Referencing cross-streets for our model can help pinpoint where exactly on a street, a tree is located. This brings the precision down to plots of land of a few square meters.
 
 ## Model Training and Prediction
 
@@ -229,15 +246,71 @@ The primary motivations for using multiple linear regression in this context inc
 
 **3.Comparison Between Candidates:** - We built identical models for both Kamala Harris and Donald Trump, allowing for a side-by-side comparison of their polling trends over time. This consistency enables a clearer understanding of differences in support and trends across the two candidates.
 
-## Why These Specific Predictors?
 
-**1.Ward (ward):** - The city ward gives a general location for a street tree in Toronto. Given unique characteristics for each of the wards, we can use those to postulate reasons behind a specific species' prominence
 
-**2.Street (streetname):** - While wards provide a general idea of location, they come at the cost of precision. Streets can narrow down a location of a tree to a simple line or curve, as opposed to an area. Streets can also cross between wards, which provides potential reasoning for relationships between wards
 
-**3.Cross Streets (crossstreet1 and crossstreet2):** - Streets are often long lines, which is a problem for precision. Referencing cross-streets for our model can help pinpoint where exactly on a street, a tree is located. This brings the precision down to plots of land of a few square meters.
+# Results
 
-## Limitations of the Models
+```{r}
+#| label: fig-6
+#| fig-cap: Plot of ward by tree species. The data used is generated from the linear model predicting botanical_name from ward, streetname, crossstreet1, and crossstreet2.
+#| echo: false
+#| warning: false
+#| message: false
+
+analysis_data <- read_csv(here::here("data/analysis_data/analysis_data.csv"))
+model_data <- read_parquet(here::here("data/model_data/model_data.parquet"))
+model <- readRDS(here("models/model.rds"))
+
+ggplot(model_data, aes(x = ward)) +
+  geom_point(aes(y = botanical_name), color = "black") +
+  geom_line(aes(y = fitted_name), color = "blue", linetype = "dotted") +
+  theme_classic() +
+  labs(y = "Botanical Name", x = "Ward", title = "Linear Model over Ward")
+```
+
+```{r}
+#| label: fig-7
+#| fig-cap: Plot of ward by tree species. The data used is generated from the linear model predicting botanical_name from ward, streetname, crossstreet1, and crossstreet2.
+#| echo: false
+#| warning: false
+#| message: false
+
+analysis_data <- read_csv(here::here("data/analysis_data/analysis_data.csv"))
+model_data <- read_parquet(here::here("data/model_data/model_data.parquet"))
+model <- readRDS(here("models/model.rds"))
+
+ggplot(model_data, aes(x = streetname)) +
+  geom_point(aes(y = botanical_name), color = "black") +
+  geom_line(aes(y = fitted_name), color = "blue", linetype = "dotted") +
+  theme_classic() +
+  labs(y = "Botanical Name", x = "Ward", title = "Linear Model over Ward")
+```
+
+```{r}
+#| label: fig-8
+#| fig-cap: Plot of ward by tree species. The data used is generated from the linear model predicting botanical_name from ward, streetname, crossstreet1, and crossstreet2.
+#| echo: false
+#| warning: false
+#| message: false
+
+analysis_data <- read_csv(here::here("data/analysis_data/analysis_data.csv"))
+model_data <- read_parquet(here::here("data/model_data/model_data.parquet"))
+model <- readRDS(here("models/model.rds"))
+
+ggplot(model_data, aes(x = crossstreet1)) +
+  geom_point(aes(y = botanical_name), color = "black") +
+  geom_line(aes(y = fitted_name), color = "blue", linetype = "dotted") +
+  theme_classic() +
+  labs(y = "Botanical Name", x = "Ward", title = "Linear Model over Ward")
+```
+
+
+\newpage
+
+# Discussion
+
+## Limitations of the Model
 
 **1.Assumptions of Linearity and Normality:** - The model assumes that the relationship between predictors and the outcome is linear, and that the residuals are normally distributed. In reality, polling data may not always satisfy these assumptions, especially if there are non-linear trends in voter support or heavy-tailed distributions in the errors.
 
@@ -246,71 +319,6 @@ The primary motivations for using multiple linear regression in this context inc
 **3.Multicollinearity:** - The predictors transparency_score and numeric_grade both relate to poll quality and may be correlated. This could introduce multicollinearity, which makes it difficult to determine the individual effect of each predictor. However, we inspected the variance inflation factors (VIFs) to ensure that multicollinearity was not excessively high.
 
 **4.Non-Independence of Observations:** - Polls conducted by the same pollster over time might not be entirely independent, leading to autocorrelation in the data. While Model 2 partially addresses this by including pollster as a fixed effect, a more complex model (e.g., hierarchical or Bayesian) could better capture these dependencies.
-
-## Alternatives Considered
-
-**1.Logistic Regression:** - Logistic regression was considered as an alternative, but it was ultimately deemed unsuitable because the outcome variable (pct) is continuous, rather than binary. Logistic regression is appropriate for classification tasks where the outcome is binary (e.g., win or lose), but our goal is to predict support percentages, making multiple linear regression a more appropriate choice.
-
-**2.Bayesian Modeling:** - A Bayesian approach could provide richer insights by incorporating prior beliefs and estimating posterior distributions for model parameters. This could be particularly useful for incorporating prior knowledge about pollster biases or expected trends. However, for this study, we focused on linear regression to prioritize interpretability and computational simplicity.
-
-**3.Inclusion of State-Level Effects:** - An additional layer of complexity that could be added to the model is the inclusion of state-level effects to capture geographical variations in polling support. State-level data was available, but due to concerns over sample size in certain states, we opted not to include state as a random effect in this version of the models. Future iterations could explore adding a random effect for state to account for regional differences.
-
-## Evaluation Metrics
-
-The models were evaluated based on:
-
--   **Root Mean Squared Error (RMSE):** To assess the goodness-of-fit for both models. Lower RMSE values indicate that the model predictions are close to the observed polling percentages.
--   **Cross-Validation:** We used a train-test split to ensure that the model generalizes well to unseen data. This helps prevent overfitting, where the model might otherwise perform well on training data but poorly on new observations.
-
-## Summary
-
-Our modeling approach leverages multiple linear regression to capture the relationship between street trees and various location factors. The primary goal is to understand how location affects tree species and if Acer patanoides's prominence can be explained by location. Despite some limitations, the models provide a useful framework for analyzing polling data, and future iterations could explore more sophisticated approaches such as Bayesian modeling or hierarchical random effects to improve robustness.
-
-# Results
-
-```{r}
-#| echo: false
-#| warning: false
-#| message: false
-
-analysis_data <- read_csv(here::here("data/analysis_data/analysis_data.csv"))
-```
-
-Looking at @fig-1, the most populous species by far is the Acer platanoides, commonly known as the Norwegian Maple. It is interesting how much more prevalent it is compared to any of the other top 10 tree species, at over 3000 recorded individuals. Also note the similarity of the names Gleditsia triacanthos and Gleditsia triacanthos f. inermis 'Skyline'. The latter is an example of a hybrid tree, which is why it's botanical name contains the botanical name of another tree.
-
-
-
-@fig-2 shows the count of trees over each ward in Toronto. Toronto has 25 wards, each with varying land sizes and populations. Ward 2 takes the top spot for tree count, with Ward 3 trailing behind it. These wards are both in Toronto's west end, Etobicoke Centre, and Etobicoke- Lakeshore. Ward 13 and Ward 10 have the least amount of trees, being Spadina-Fort York and Toronto Centre.
-
-
-
-
-
-@fig-4 is a histogram of the frequency of certain tree-diameters across Toronto. The histogram has a very long tail to the left, indicating one or two trees having upwards of 815 cm of diameter.
-
-
-
-@fig-5 is the result of trimming large dbh_trunk observations from @fig-4. This gives us a better idea of where the average dbh is, which is around 8-12 cm. However, this average would have been made without the large DBH values mentioned earlier, which would skew this average to a higher number.
-
-\newpage
-
-# Discussion
-
-## The worrying prominence of Acer platanoides
-
-@fig-1 shows that Acer platanoides, otherwise known as the Norway Maple, is clearly the most populous tree in the city of Toronto, beating out any of 9 other contenders by 200 individuals. Acer platanoides is a well known tree used in urban environments, especially after the demise of elm trees in the 1970s (@urbanforest). These trees are know for ‘a vigorous early growth rate, desirable form and size, the capacity to withstand many urban impacts (e.g. pavement, moderate levels of pollution, dusts, and dry soils) and the abilities to transplant well, grow on a wide variety of soils, and withstand ice and snow damage better than other maples’ (@norwaymaple). Being planted in cities, it's seeds can travel by wind across to more wooded suburbs, where the seeds can tolerate shade for extended periods of time (@urbanforest). However, as it's common name suggests, it is not a native species to Canada, instead brought here by European explorers and settlers. While not a very invasive species, taking over just 9% of Southern Ontario's forests, it does so by harming other native plants and trees (@urbanforests). More attention should be cast on the spread of this tree, as it has the potential to devastate Toronto's and Southern Ontario's forests in the years to come.
-
-While @fig-3 demonstrates that Acer platanoides isn't the most popoulous tree everywhere in Toronto, it also shows the potential dangers having non-native species have on places with little natural wildlife. Ward 13 has the fewest street trees in Toronto, and ther are still over 30 trees of a species known to be invasive and hamper the survival of native plants and trees. Additionally, since the downtown core is full of tall buildings which carry wind currents, the dispersal of Acer platanoides seeds seems inevitable, and will only exacerbate the troubling increasing in population of this invasive species, across Toronto and Southern Ontario. More care should be put into the planning of street trees, putting more empahsis on native trees in spaces with minial room for any trees to begin with.
-
-## The lack of trees in Toronto-Centre
-
-@fig-2 shows the distribution of trees across the 25 wards of Toronto. Wards 2 and 3 top the rankings, at over 2000 individuals. This isn't a surprise as those wards are located in Etobicoke Centre and Etobicoke-Lakeshore, consisting mainly of suburbs and small pockets of woodland. On the other hand, Wards 10 and 13, Spadina-Fort York, and Toronto Centre, display a shocking lack of trees, at 500 or less. These wards make up a majority of Toronto's downtown core, which would explain the lack of trees. However, this could be a call to invest in more roadside and path side greenery. Implementing more trees either along big avenues such as university, or small roads servicing townhouses and condos, can help liven up what is considered by many to be a dull, drab section of the city, with endless rows of concrete and glass interspersed with concrete and brick and little else.
-
-Knowing that Ward 13 has the lowest amount of street trees across all of Toronto's wards, @fig-3 was made to investigate the tree species count in this ward. Unlike the city-wide trend of Acer platanoides being the most popoulous, the most popoulous tree in this ward is Gleditsia triacanthos, otherwise known as the Honey Locust. The honey Locust. The HOney Locust is a tree that grows moderately fast and resiliant against dry and salty- climates. This makes it ideal for windbreaking (@blair1990gleditsia). Windbreaking, as mentioned earlier, helps create inviting spaces in urban enviroments, especially for pedestrians. Using a tree such as Honey Locut makes sense therefore, in a crowded downtore core with large skyscrapers and condos, which funnel air and wind around them. The species is native to North America, but it's reach just barely makes into the southernmost areas of Ontario, making it technically a non-native species in Toronto (@blair1990gleditsia).
-
-## Anomalies in DBH diameters and potential causes
-
-The spread of DBH diameters as seen in @fig-4 indicates that a small number of trees have extremely high DBH values. A DBH value of 800 for instance, means that the measured diameter of the tree is 8 meters! This is most likely an error on the part of the person in charge of inputting data at the time. There may have been a decimal missing from the entry, which would divide the offending dbh by 10. @fig-5 was made excluding any dbh_trunk values over 200 cm, to get a better look at the majority of all trees in Toronto. It shows a much clearer distribution of the vast majority of all dbh_trunk values in the data. The largest bin is located somewhere between 8 cm and 12 cm, indicating that the averaege diameter of Toronto's street trees is around that value as well. This suggests that most street trees are actually very young, and have not had much time to develop their trunks. This can be explained by initiatives to plant saplings along new or existing roads, potentially replacing older trees that had been cut down to make way for urban development. Larger trees are more rare either because they have been removed for urban developemnt, mentioned before, or as a result of storms and natural disasters.
 
 ## Weaknesses and next steps
 
