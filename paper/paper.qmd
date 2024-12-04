@@ -6,7 +6,7 @@ author:
 thanks: "Code and data are available at: https://github.com/Veyasan1/STA3014-Paper1"
 date: today
 date-format: long
-abstract: "Acer plantiodes is an invasive species that has taken over the streets of Toronto. Using the Street Tree data from OpenData Toronto, this paper examines the patterns and trends behind this spread. A linear model was created to predict species based on ward, street and cross streets. Uncovered was a abundance of a non-native tree species, and a lack of trees on the streets of Toronto's core"
+abstract: "Acer platanoides is an invasive species that has taken over the streets of Toronto. Using the Street Tree data from OpenData Toronto, this paper examines the patterns and trends behind this spread. A linear model was created to predict species based on ward, street and cross streets. The model didn't find directionalyty to Acer platanoides' spread, suggested that volumes of Acer platanoides should be monitored instead."
 format: pdf
 number-sections: true
 bibliography: references.bib
@@ -21,6 +21,7 @@ library(tidyverse)
 library(here)
 library(arrow)
 library(modelsummary)
+library(kableExtra)
 
 analysis_data <- read_csv(here("data/analysis_data/analysis_data.csv"))
 model_data <- read_parquet(here::here("data/model_data/model_data.parquet"))
@@ -29,11 +30,11 @@ model <- readRDS(here("models/model.rds"))
 
 # Introduction
 
-Urban spaces can be void of vast expanses of nature, whether it be grass fields, blooming flowers, or teaming and diverse natural wildlife. One simple way to tackle this is to incorporate nature within the urban landscape, such as with trees. Trees are a vital plant in the world, they take in carbon dioxide and provide oxygen, a key component in the air we breath. Urban areas are known for the excess in carbon dioxide, which only makes it seem natural that trees can live and perhaps thrive in such environments. One way cities have incorporated trees into the city are roadside trees. Trees line many of the cities highways, arterial roads, collector roads, and small roads. Lines of trees lined alongside highways can act as a natural sound barrier by reflecting, scattering and absorbing nearby noises (@aais). Tree-lined streets can also alter the way wind affects pedestrians below them, creating a more hospitable environment to promote active transportation such as walking or biking [@beptree[. It should be no surprise then, that many cities around the world, including Toronto, have incorporated trees into their landscape, in busy downtown centres, to sleepy suburbs, and everywhere in between.
+Urban spaces can be void of vast expanses of nature, whether it be grass fields, blooming flowers, or teaming and diverse natural wildlife. One simple way to tackle this is to incorporate nature within the urban landscape, such as with trees. Trees are a vital plant in the world, they take in carbon dioxide and provide oxygen, a key component in the air we breath. Urban areas are known for the excess in carbon dioxide, which only makes it seem natural that trees can live and perhaps thrive in such environments. One way cities have incorporated trees into the city are roadside trees. Trees line many of the cities highways, arterial roads, collector roads, and small roads. Lines of trees lined alongside highways can act as a natural sound barrier by reflecting, scattering and absorbing nearby noises [@aais]. Tree-lined streets can also alter the way wind affects pedestrians below them, creating a more hospitable environment to promote active transportation such as walking or biking [@beptree]. It should be no surprise then, that many cities around the world, including Toronto, have incorporated trees into their landscape, in busy downtown centres, to sleepy suburbs, and everywhere in between.
 
 Acer platanoides is a well known tree used in urban environments, especially after the demise of elm trees in the 1970s [@urbanforest]. These trees are know for ‘a vigorous early growth rate, desirable form and size, the capacity to withstand many urban impacts (e.g. pavement, moderate levels of pollution, dusts, and dry soils) and the abilities to transplant well, grow on a wide variety of soils, and withstand ice and snow damage better than other maples’ [@norwaymaple]. Being planted in cities, it's seeds can travel by wind across to more wooded suburbs, where the seeds can tolerate shade for extended periods of time [@urbanforest]. However, as it's common name suggests, it is not a native species to Canada, instead brought here by European explorers and settlers. While not a very invasive species, taking over just 9% of Southern Ontario's forests, it does so by harming other native plants and trees [@urbanforests]. More attention should be cast on the spread of this tree, as it has the potential to devastate Toronto's and Southern Ontario's forests in the years to come.
 
-In this paper we look at street tree data from Toronto's roadside trees, and discern any patterns or observations behind the rise of Acer Platanoides. To do this, a linear model was created to predict botanical_name. Predictors include ward, streetname, and crosstreet1 and crossstreet2. The linear model uncovered TO BE COMPLETED
+In this paper we look at street tree data from Toronto's roadside trees, and discern any patterns or observations behind the rise of Acer Platanoides. To do this, a linear model was created to predict botanical_name. Predictors include ward, streetname, and crosstreet1 and crossstreet2. The linear model failed to find a specific direction Acer platanoides travels in, rather it is present everywhere. This suggested that instead of looking for directions Acer platanoides spreads in, we should focus on the counts of Acer platanoides in a given area.
 
 Section 2 will outline the source of this data, and highlight key varaibles to be used in the model. Section 3 covers the construction and rationale of the model. Section 4 is where the model results will be outlined. Finally, section 5 discusses key takeaways from the data and the model, and addresses weaknesses and limitations that can be considered for another report.
 
@@ -77,12 +78,12 @@ Ward is one of several location varaibles included in the Street Trees dataset. 
 
 ```{r}
 #| label: fig-2
-#| fig-cap: Acer plantiodes distribution across Toronto wards up to September 2024
+#| fig-cap: Acer platanoides distribution across Toronto wards up to September 2024
 #| echo: false
 #| warning: false
 #| message: false
 
-# Gather counts of Acer plantiodes per ward
+# Gather counts of Acer platanoides per ward
 ward_count <- analysis_data %>%
   filter(botanical_name == "Acer platanoides") %>%
   count(ward, sort = TRUE)
@@ -101,7 +102,7 @@ Anoter location variable in the Street Trees dataset, `streetname` records the s
 
 ```{r}
 #| label: fig-3
-#| fig-cap: Acer plantiodes distribution across Toronto streets up to September 2024
+#| fig-cap: Acer platanoides distribution across Toronto streets up to September 2024
 #| echo: false
 #| warning: false
 #| message: false
@@ -126,7 +127,7 @@ While `streetname` covers the street a tree lies upon, `crossstreet1` & `crossst
 
 ```{r}
 #| label: fig-4
-#| fig-cap: Acer plantiodes distribution across Toronto crossstreets up to September 2024
+#| fig-cap: Acer platanoides distribution across Toronto crossstreets up to September 2024
 #| echo: false
 #| warning: false
 #| message: false
@@ -147,7 +148,7 @@ crossstreet1_count |>
 
 ```{r}
 #| label: fig-5
-#| fig-cap: Acer plantiodes distribution across Toronto crossstreets up to September 2024
+#| fig-cap: Acer platanoides distribution across Toronto crossstreets up to September 2024
 #| echo: false
 #| warning: false
 #| message: false
@@ -178,9 +179,9 @@ Our modeling strategy estimates street trees by botanical name. To achieve this,
 
 The model created uses multiple linear regression, predicting botanical name (`botanical_name`) asa function of 4 location varaibles, `ward` (city ward), `streetname`(tree street is on/nearby), and `crossstreet1` & `crossstreet2` (nearest intersecting streets, if applicable).
 
-**Model 1: Linear Model by Date, Transparency Score, and Grade**\
+**Linear Model by Ward, Streetname, Crossstreet1, and Crossstreet2**\
 \begin{align}  
-y_i &= \beta_0 + \beta_1 \cdot \text{end\_date}_i + \beta_2 \cdot \text{transparency\_score}_i + \beta_3 \cdot \text{numeric\_grade}_i + \epsilon_i \\
+y_i &= \beta_0 + \beta_1 \cdot \text{ward}_i + \beta_2 \cdot \text{streetname}_i + \beta_3 \cdot \text{crossstreet1}_i + + \beta_4 \cdot \text{crossstreet2}_i + \epsilon_i \\
 \epsilon_i &\sim \text{Normal}(0, \sigma^2)
 \end{align}
 
@@ -191,11 +192,7 @@ where:
 -   $beta_1$, $\beta_2$, $\beta_3$ , $\beta_4$ represent the coefficients for the predictors: `ward`, `streetname`, `crosstreet1`, and `crossstreet2`, respectively.
 -   $epsilon_i$ is the error term, which is assumed to be normally distributed with variance $\sigma^2$.
 
-This model helps capture the general trend tree species across an array of location factors in Toronto.
-
-**Model Predictions and Augmentation**
-
-The models were then used to predict botanical names, which were added to the original datasets as new columns. The augmented dataset allowed for a comprehensive comparison of predicted versus observed botanical names, and facilitated visualization of how widespread certain species are across Toronto.
+This model helps capture the general trend tree species across an array of location factors in Toronto. The model was then used to predict botanical names, which were added to the original datasets as new columns. The augmented dataset allowed for a comprehensive comparison of predicted versus observed botanical names, and facilitated visualization of how widespread certain species are across Toronto.
 
 ## Model set-up
 
@@ -231,28 +228,13 @@ These assumptions are crucial for ensuring that the model coefficients are unbia
 
 ## Cross-Validation and Overfitting Prevention
 
-To evaluate the robustness of our models, a train-test split was applied. The training data was used to fit the model, while the test data (which the model had not seen during training) was used to evaluate model performance. This approach helps in identifying overfitting, ensuring that the model can generalize beyond the specific dataset used for training.
+To evaluate the robustness of our models, a train-test split was applied. The training data was used to fit the model, while the test data (which the model had not seen during training) was used to evaluate model performance. This approach helps in identifying over fitting, ensuring that the model can generalize beyond the specific dataset used for training.
 
 For future improvements, we could explore the use of cross-validation for further robustness checks, ensuring that the model’s performance is not overly dependent on a particular train-test split.
 
 ### Model justification
 
-The choice of multiple linear regression models for predicting the speceis of street trees in Toronto is driven by several key considerations regarding the nature of the data and the objectives of the analysis. Below, we provide a detailed justification for the chosen models and predictors, discuss the reasoning behind the modeling choices, and address limitations and alternatives considered during the process.
-
-## Why Multiple Linear Regression?
-
-**Multiple linear regression (MLR)** was selected as the modeling framework due to its ability to estimate relationships between multiple predictors and a outcome variable—in this case, the names of tree species (botnaical_name). MLR provides a straightforward approach to quantify the impact of each predictor on polling percentages, allowing us to make inferences about the strength and direction of these relationships.
-
-The primary motivations for using multiple linear regression in this context include:
-
-**1.Simplicity and Interpretability:** - Linear models offer a high degree of interpretability. Each coefficient in the model provides a clear indication of the expected change in voter support given a one-unit change in the corresponding predictor, holding all other predictors constant. This is crucial for understanding how time, poll quality, and pollster contribute to support dynamics.
-
-**2.Ability to Control for Multiple Predictors:** - MLR allows us to control for several influential factors simultaneously, such as time (end_date), pollster quality (transparency_score and numeric_grade), and the polling organization (pollster). By accounting for these variables, we can isolate the individual impact of each predictor and better understand the underlying factors that affect polling outcomes.
-
-**3.Comparison Between Candidates:** - We built identical models for both Kamala Harris and Donald Trump, allowing for a side-by-side comparison of their polling trends over time. This consistency enables a clearer understanding of differences in support and trends across the two candidates.
-
-
-
+The choice of multiple linear regression models for predicting the species of street trees in Toronto is driven by several key considerations regarding the nature of the data and the objectives of the analysis. Below, we provide a detailed justification for the chosen models and predictors, discuss the reasoning behind the modeling choices, and address limitations and alternatives considered during the process.
 
 # Results
 
@@ -273,7 +255,7 @@ ggplot(model_data, aes(x = ward)) +
   theme_classic() +
   labs(y = "Botanical Name", x = "Ward", title = "Linear Model over Ward")
 ```
-
+@fig-6 shows that across all wards, only some trees are prevalent across all of them. One of them is Acer platanoides.
 ```{r}
 #| label: fig-7
 #| fig-cap: Plot of ward by tree species. The data used is generated from the linear model predicting botanical_name from ward, streetname, crossstreet1, and crossstreet2.
@@ -281,57 +263,53 @@ ggplot(model_data, aes(x = ward)) +
 #| warning: false
 #| message: false
 
-analysis_data <- read_csv(here::here("data/analysis_data/analysis_data.csv"))
-model_data <- read_parquet(here::here("data/model_data/model_data.parquet"))
-model <- readRDS(here("models/model.rds"))
-
 ggplot(model_data, aes(x = streetname)) +
   geom_point(aes(y = botanical_name), color = "black") +
   geom_line(aes(y = fitted_name), color = "blue", linetype = "dotted") +
   theme_classic() +
-  labs(y = "Botanical Name", x = "Ward", title = "Linear Model over Ward")
+  labs(y = "Botanical Name", x = "Street", title = "Linear Model over Street")
 ```
-
+In @fig-7, Acer platanoides is seen across the most streets, given the frequency of points. 
 ```{r}
 #| label: fig-8
-#| fig-cap: Plot of ward by tree species. The data used is generated from the linear model predicting botanical_name from ward, streetname, crossstreet1, and crossstreet2.
+#| fig-cap: Plot of crossstreet1 by tree species. The data used is generated from the linear model predicting botanical_name from ward, streetname, crossstreet1, and crossstreet2.
 #| echo: false
 #| warning: false
 #| message: false
-
-analysis_data <- read_csv(here::here("data/analysis_data/analysis_data.csv"))
-model_data <- read_parquet(here::here("data/model_data/model_data.parquet"))
-model <- readRDS(here("models/model.rds"))
 
 ggplot(model_data, aes(x = crossstreet1)) +
   geom_point(aes(y = botanical_name), color = "black") +
   geom_line(aes(y = fitted_name), color = "blue", linetype = "dotted") +
   theme_classic() +
-  labs(y = "Botanical Name", x = "Ward", title = "Linear Model over Ward")
+  labs(y = "Botanical Name", x = "Cross street 1", title = "Linear Model over Cross Street 1")
 ```
+```{r}
+#| label: fig-9
+#| fig-cap: Plot of crossstreet2 by tree species. The data used is generated from the linear model predicting botanical_name from ward, streetname, crossstreet1, and crossstreet2.
+#| echo: false
+#| warning: false
+#| message: false
 
-
+ggplot(model_data, aes(x = crossstreet2)) +
+  geom_point(aes(y = botanical_name), color = "black") +
+  geom_line(aes(y = fitted_name), color = "blue", linetype = "dotted") +
+  theme_classic() +
+  labs(y = "Botanical Name", x = "Cross street 2", title = "Linear Model over Cross Street 2")
+```
+Both @fig-8 and @fig-9 carry the same conclusions over to crossstreet1 and crossstreet2
 \newpage
 
 # Discussion
 
-## Limitations of the Model
-
-**1.Assumptions of Linearity and Normality:** - The model assumes that the relationship between predictors and the outcome is linear, and that the residuals are normally distributed. In reality, polling data may not always satisfy these assumptions, especially if there are non-linear trends in voter support or heavy-tailed distributions in the errors.
-
-**2.Potential for Omitted Variable Bias:** - While our models include several important predictors, there may still be unobserved factors influencing voter support that are not captured in the models. Examples include specific campaign events, candidate debates, or sudden shifts in voter sentiment.
-
-**3.Multicollinearity:** - The predictors transparency_score and numeric_grade both relate to poll quality and may be correlated. This could introduce multicollinearity, which makes it difficult to determine the individual effect of each predictor. However, we inspected the variance inflation factors (VIFs) to ensure that multicollinearity was not excessively high.
-
-**4.Non-Independence of Observations:** - Polls conducted by the same pollster over time might not be entirely independent, leading to autocorrelation in the data. While Model 2 partially addresses this by including pollster as a fixed effect, a more complex model (e.g., hierarchical or Bayesian) could better capture these dependencies.
+The model results don't show a clear direction Acer platanoides travels in. Instead it tells us that it is present in almost every ward, and every street in Toronto. This undermines one of the key issues with this tree, the way it spreads. Its seeds are know to travel long distances, which is how it can travel to other cities and towns. This is exacerbated by the sheer number of these trees in Toronto. All those trees will spread their seeds across Southern Ontario, disrupting the natural treescape. This report has shown us the importance of mintoring and controlling the population of Acer platanoides in Toronto and Southern Ontario.
 
 ## Weaknesses and next steps
 
 Street Tree data is cumulative, meaning Urban Forestry has to manually update the status of each tree, which is an arduous task for over 30000 trees. As a result the data may be mismatched, with some trees having only been checked months or even years prior. This may be why @fig-4 is so skewed. There may have been errors in the way the data was inputted for certain trees, leading to misplaced decimals. A similar occurrence happened when observing the raw data, which can be seen in the Appendix. No additional information was provided by OpenData Toronto when viewing the dataset on their database, apart from who provided the data, Urban Forestry. Perhaps more detail on their part, including units of measurement for dbh_trunk, would have helped make this analysis much easier.Another limitation mentioned earlier is the inclusion of some privately-owned trees.
 
-Next steps would be augmenting this data with other data from Toronto's roads, or other trees, to see if any comparisons or correlations can be drawn there. Does vehicle traffic impact the trees lining a certain road, and if so, how long would it take for the effects to be noticeable? Does the distribution of street trees tell us anything about income disparity, fire risk, or quality of life within Toronto? This report can be used as a launching pad for further investigations, using key takeaways from this report as drivers for further questions.
+Next steps would be to investigate the high counts of Acer platanoides in Toronto. Where did they originate from? Where did they start showing up and who was responsible for that? From there, a plan could be drafted to prevent the future spread of invasive plants, and give insight to how Acer platanoides can be stopped in Toronto
 
-With newer report, pressure will be put upon Urban Forestry to better curtail the data they have collected thus far. It is imperative that their hard work be recognized and any feedback on the data they have collected be sent to them as well, ensuring better datasets for analysts, leading to more informative conclusions for all.
+With newer reports, pressure will be put upon Urban Forestry to better curtail the data they have collected thus far. It is imperative that their hard work be recognized and any feedback on the data they have collected be sent to them as well, ensuring better datasets for analysts, leading to more informative conclusions for all.
 
 \newpage
 
@@ -339,7 +317,25 @@ With newer report, pressure will be put upon Urban Forestry to better curtail th
 
 ## Surveys, sampling, and observational data
 
-ASTM's survey of Toronto's street trees leaves a lot to be desired. With their implementation of cluster-sampling, certain "clusters" of the city may be left unrecorded for extended periods of time. This introduces an element of variance with respect to time. Certain trees have more up-to-date assesments than others. The way this impacts 
+ASTM's survey of Toronto's street trees leaves a lot to be desired. With their implementation of cluster-sampling, certain "clusters" of the city may be left unrecorded for extended periods of time, creating variance in accuracy. Additionally, there seems to be some quirks with the collected data. According to @fig-9, there are several extreme values for the variable `dbh_trunk` that make seemingly no sense. The tree with the largest recorded dbh comes in at around 800 cm, which would make it one of the girthiest trees in Canada, according to Monumental Trees' records [@MonumentalTrees]. These values seem to be mistakes made by management misinputting the recorded dbh value, or OpenData Staff improperly cleaning the data.
+
+While ASTM is pledging to move forward with periodic city-wide maintenance [@StreetTreeMaintenance], which should include updating records on all trees, more can be done to better preserve street tree data. First, given how the dataset will cahnge over time, a periodic update should be implemented in a street tree survey. However, instead of replacing data outright, new datasets should be created to correspond with each cycle of data collection. Just like ASTM did, we can implement cluster-sampling. Toronto can be split into smaller clusters, ensuring each cluster is distinct from one another. Within each cluster, a team will work to cover all neighborhoods, identifying and then recording street trees in each neighborhood. Each tree will have it's species and common name identified. Then the tree's location will be given by both coordinates (for precision), and approximated to the nearest postal address (for context). The nearest postal address will have separate variables for number and street. Additionally, assuming road junctions in Toronto max out at 4 roads, 3 additional cross streets can be listed as variables, as a way to pinpoint the nearest junction to a street tree. DBH is a relatively vague measurement, as breast height changes from location to location. Therefore this survey will use Brokaw and Thompson's proposed $D_x$ measurement [@dbhalt]. This eliminates the vaugeness of "breast height", and instead outlines the recorded height where the diameter measurement took place. A new varaible to add would be height, as that is a key physical indicator of tree growth. This can be done by taking measurements along the ground and using trigonometry to calcualte tree height, as shown by the University of British Columbia [@bigTree].
+
+
+```{r}
+#| label: fig-10
+#| fig-cap: Distribution of Distance-at-Breast-Height diameter of all trees in Toronto up to September 2024
+#| echo: false
+#| warning: false
+#| message: false
+
+analysis_data |> 
+  ggplot(aes(x = dbh_trunk)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(x = "DBH Diameter (cm)",
+       y = "Tree Count")
+```
 
 ## Data Cleaning
 
