@@ -95,3 +95,10 @@ ggplot(model_data, aes(x = crossstreet1)) +
   geom_line(aes(y = fitted_name), color = "blue", linetype = "dotted") +
   theme_classic() +
   labs(y = "Botanical Name", x = "Ward", title = "Linear Model over Ward")
+
+analysis_data |> 
+  ggplot(aes(x = dbh_trunk)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(x = "DBH Diameter (cm)",
+       y = "Tree Count")
