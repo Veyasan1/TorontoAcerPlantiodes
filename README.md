@@ -1,4 +1,4 @@
-# Examining the case behind Acer Platanoide's plight on Toronto's Street Trees
+# Examining the case behind Acer Platanoides' plight on Toronto's Street Trees
 
 ## Overview
 
